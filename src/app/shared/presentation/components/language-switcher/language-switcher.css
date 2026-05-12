@@ -6,10 +6,10 @@ mat-button-toggle-group {
 mat-button-toggle {
   background: #0f172a;
   color: white;
-  border: 1px solid #00c2ff;
+  border: 1px solid #1A4BFF;
 }
 
 mat-button-toggle.mat-button-toggle-checked {
-  background: #00c2ff;
+  background: #1A4BFF;
   color: white;
 }
