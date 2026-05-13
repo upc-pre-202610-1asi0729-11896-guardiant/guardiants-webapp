@@ -4,6 +4,7 @@ import { Vehicle } from '../domain/model/vehicle.entity';
 import { VehicleAssembler } from '../infrastructure/vehicle-assembler';
 import { Observable, catchError, tap, throwError, map } from 'rxjs';
 import { VehicleResource } from '../infrastructure/vehicle-response';
+import { environment } from '../../../environments/environment';
 
 interface FleetState {
   vehicles: Vehicle[];
@@ -31,7 +32,7 @@ export class FleetStore {
   loadVehicles(): Observable<Vehicle[]> {
     this._patch({ isLoading: true, error: null });
 
-    return this.http.get<VehicleResource[]>('http://localhost:3000/vehicles').pipe(
+    return this.http.get<VehicleResource[]>(`${environment.apiBaseUrl}/vehicles`).pipe(
       tap((response) => {
         const vehicles = this.assembler.toEntitiesFromResponse(response);
         this._patch({ vehicles, isLoading: false });
@@ -47,7 +48,7 @@ export class FleetStore {
 
   blockVehicle(vehicleId: string): Observable<Vehicle> {
     return this.http.patch<VehicleResource>(
-      `http://localhost:3000/vehicles/${vehicleId}`,
+      `${environment.apiBaseUrl}/vehicles/${vehicleId}`,
       { status: 'BLOCKED' }
     ).pipe(
       tap((response) => {
@@ -71,5 +72,4 @@ export class FleetStore {
     this._state.update((s) => ({ ...s, ...partial }));
   }
 }
-
 

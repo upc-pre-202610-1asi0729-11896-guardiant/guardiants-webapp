@@ -6,6 +6,7 @@ import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { AlertEntity, AlertStatus } from '../domain/model/alert.entity';
 import { AlertAssembler } from '../infrastructure/alert-assembler';
 import { AlertResource } from '../infrastructure/alert-response';
+import { environment } from '../../../environments/environment';
 
 // ── Time filter options ───────────────────────────────────────────────────────
 export type AlertTimeFilter = 'last_hour' | 'today' | 'last_7_days' | 'last_30_days';
@@ -19,8 +20,6 @@ interface AlertState {
   timeFilter: AlertTimeFilter;
   readFilter: AlertReadFilter;
 }
-
-const API_BASE = 'http://localhost:3000';
 
 @Injectable({ providedIn: 'root' })
 export class AlertStore {
@@ -68,7 +67,7 @@ export class AlertStore {
   loadAlerts(): Observable<AlertEntity[]> {
     this._patch({ isLoading: true, error: null });
 
-    return this.http.get<AlertResource[]>(`${API_BASE}/alerts`).pipe(
+    return this.http.get<AlertResource[]>(`${environment.apiBaseUrl}/alerts`).pipe(
       tap((resources) => {
         const alerts = this.assembler.toEntities(resources);
         this._patch({ alerts, isLoading: false });
@@ -84,7 +83,7 @@ export class AlertStore {
 
   markAsRead(alertId: string): Observable<void> {
     return this.http
-      .patch<void>(`${API_BASE}/alerts/${alertId}`, { status: 'READ' as AlertStatus })
+      .patch<void>(`${environment.apiBaseUrl}/alerts/${alertId}`, { status: 'READ' as AlertStatus })
       .pipe(
         tap(() => {
           this._state.update((s) => ({
