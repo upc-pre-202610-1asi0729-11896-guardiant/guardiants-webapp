@@ -1,15 +1,15 @@
 // src/app/alerting/presentation/pages/security-alert/security-alert.ts
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { AlertStore, AlertTimeFilter, AlertReadFilter } from '../../../application/alert.store';
-import { AppShell } from '../../../../shared/presentation/shell/app-shell/app-shell';
 import { IamStore } from '../../../../iam/application/iam.store';
+// 👆 AppShell eliminado — ya no se importa ni se usa aquí
 
 @Component({
   selector: 'app-security-alert',
   standalone: true,
-  imports: [CommonModule, AppShell],
+  imports: [CommonModule], // 👈 limpio
   templateUrl: './security-alert.html',
   styleUrls: ['./security-alert.css'],
 })
@@ -17,7 +17,6 @@ export class SecurityAlert implements OnInit {
   private readonly alertStore = inject(AlertStore);
   private readonly iamStore = inject(IamStore);
 
-  // ── Store projections ────────────────────────────────────────────────────
   readonly alerts = this.alertStore.filteredAlerts;
   readonly recentAlerts = this.alertStore.recentAlerts;
   readonly isLoading = this.alertStore.isLoading;
@@ -29,7 +28,6 @@ export class SecurityAlert implements OnInit {
   readonly userName = this.iamStore.userName;
   readonly userPlan = this.iamStore.userPlan;
 
-  // ── Time filter labels (para el template) ────────────────────────────────
   readonly timeFilters: { value: AlertTimeFilter; label: string }[] = [
     { value: 'last_hour', label: 'Last hour' },
     { value: 'today', label: 'Today' },
@@ -41,7 +39,6 @@ export class SecurityAlert implements OnInit {
     this.alertStore.loadAlerts().subscribe({ error: () => void 0 });
   }
 
-  // ── Actions ───────────────────────────────────────────────────────────────
   setTimeFilter(filter: AlertTimeFilter): void {
     this.alertStore.setTimeFilter(filter);
   }
@@ -55,11 +52,9 @@ export class SecurityAlert implements OnInit {
   }
 
   blockVehicle(vehicleId: string): void {
-    // Placeholder – conectar con VehicleCommandStore cuando esté disponible
     console.warn('Block vehicle:', vehicleId);
   }
 
-  /** Tiempo relativo amigable, e.g. "2 min ago" */
   timeAgo(date: Date): string {
     const diff = Math.floor((Date.now() - date.getTime()) / 1000);
     if (diff < 60) return `${diff}s ago`;
