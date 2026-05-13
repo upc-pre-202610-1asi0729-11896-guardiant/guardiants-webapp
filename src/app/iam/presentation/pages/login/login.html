@@ -1,0 +1,151 @@
+<!-- src/app/iam/presentation/pages/login/login.html -->
+<div class="auth-shell">
+
+  <!-- Left panel: branding -->
+  <aside class="auth-brand">
+    <div class="brand-content">
+      <div class="brand-logo">
+        <span class="logo-icon">👁</span>
+        <span class="logo-text">God's Tracker</span>
+      </div>
+      <h1 class="brand-tagline">
+        Seguridad vehicular<br>
+        <span class="brand-accent">en tiempo real.</span>
+      </h1>
+      <p class="brand-sub">
+        Monitorea, protege y gestiona tu flota desde cualquier lugar.
+      </p>
+
+      <div class="brand-stats">
+        <div class="stat">
+          <span class="stat-value">99.9%</span>
+          <span class="stat-label">Uptime</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">&lt;3s</span>
+          <span class="stat-label">Tiempo de alerta</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">24/7</span>
+          <span class="stat-label">Monitoreo</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right panel: form -->
+  <main class="auth-form-panel">
+    <div class="form-wrapper">
+
+      <!-- Mobile logo -->
+      <div class="mobile-logo">
+        <span class="logo-icon">👁</span>
+        <span class="logo-text">God's Tracker</span>
+      </div>
+
+      <div class="form-header">
+        <h2>Bienvenido de vuelta</h2>
+        <p>Ingresa tus credenciales para continuar.</p>
+      </div>
+
+      <!-- Demo shortcut badges -->
+      <div class="demo-badges">
+        <button type="button" class="demo-badge" (click)="fillDemo('empresa')" matRipple>
+          <mat-icon>business</mat-icon> Demo Empresa
+        </button>
+        <button type="button" class="demo-badge" (click)="fillDemo('persona')" matRipple>
+          <mat-icon>person</mat-icon> Demo Personal
+        </button>
+      </div>
+
+      <!-- Error banner -->
+      @if (store.error()) {
+        <div class="error-banner" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ store.error() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="login-form">
+
+        <!-- Email -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Correo electrónico</mat-label>
+          <mat-icon matPrefix>mail_outline</mat-icon>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            placeholder="tu@correo.com"
+            autocomplete="email"
+          />
+          @if (emailCtrl.hasError('required') && emailCtrl.touched) {
+            <mat-error>El email es obligatorio.</mat-error>
+          }
+          @if (emailCtrl.hasError('email') && emailCtrl.touched) {
+            <mat-error>Ingresa un email válido.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Password -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <input
+            matInput
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Mínimo 8 caracteres"
+            autocomplete="current-password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (passCtrl.hasError('required') && passCtrl.touched) {
+            <mat-error>La contraseña es obligatoria.</mat-error>
+          }
+          @if (passCtrl.hasError('minlength') && passCtrl.touched) {
+            <mat-error>Mínimo 8 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Forgot password -->
+        <div class="form-actions-top">
+          <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <!-- Submit -->
+        <button
+          mat-flat-button
+          type="submit"
+          class="submit-btn full-width"
+          [disabled]="store.isLoading()"
+        >
+          @if (store.isLoading()) {
+            <mat-progress-spinner diameter="20" mode="indeterminate" />
+            Ingresando…
+          } @else {
+            <mat-icon>login</mat-icon>
+            Iniciar Sesión
+          }
+        </button>
+
+      </form>
+
+      <mat-divider />
+
+      <p class="register-cta">
+        ¿No tienes cuenta?
+        <a routerLink="/register" class="register-link">Regístrate gratis</a>
+      </p>
+
+    </div>
+  </main>
+
+</div>
