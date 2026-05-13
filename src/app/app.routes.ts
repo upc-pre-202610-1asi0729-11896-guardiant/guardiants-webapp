@@ -31,6 +31,11 @@ export const routes: Routes = [
         loadComponent: () => import('./fleet/presentation/pages/home/home').then((m) => m.Home),
       },
       {
+        path: 'live-status',
+        loadComponent: () =>
+          import('./fleet/presentation/pages/live-status/live-status').then((m) => m.LiveStatus),
+      },
+      {
         path: 'profile',
         loadComponent: () =>
           import('./iam/presentation/pages/profile/profile').then((m) => m.Profile),

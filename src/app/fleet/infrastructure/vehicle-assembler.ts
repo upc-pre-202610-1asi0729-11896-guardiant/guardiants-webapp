@@ -31,9 +31,15 @@ export class VehicleAssembler implements BaseAssembler<Vehicle, VehicleResource,
       brand: resource.brand,
       status: resource.status,
       capacity: resource.capacity,
-      createdAt: resource.createdAt,
+      createdAt: new Date(resource.createdAt as unknown as string),
       lastLocation: resource.lastLocation,
       lastUpdated: resource.lastUpdated,
+      mileageKm: resource.mileageKm,
+      lastLat: resource.lastLat,
+      lastLng: resource.lastLng,
+      speedKmh: resource.speedKmh,
+      batteryPct: resource.batteryPct,
+      deviceStatus: resource.deviceStatus,
     });
   }
 
@@ -54,6 +60,12 @@ export class VehicleAssembler implements BaseAssembler<Vehicle, VehicleResource,
       createdAt: entity.createdAt,
       lastLocation: entity.lastLocation,
       lastUpdated: entity.lastUpdated,
+      mileageKm: entity.mileageKm,
+      lastLat: entity.lastLat,
+      lastLng: entity.lastLng,
+      speedKmh: entity.speedKmh,
+      batteryPct: entity.batteryPct,
+      deviceStatus: entity.deviceStatus,
     } as VehicleResource;
   }
 }

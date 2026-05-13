@@ -69,6 +69,15 @@
   width: 100%;
 }
 
+.sidebar-item--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sidebar-item--disabled:hover {
+  background: transparent;
+}
+
 .sidebar-item.is-active,
 .sidebar-item:hover {
   background: #dddfe4;
@@ -133,27 +142,6 @@
   color: #444;
 }
 
-.topbar-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.vehicle-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #16d21f;
-  box-shadow: 0 0 0 3px rgba(22, 210, 31, 0.15);
-}
 
 .topbar-actions {
   display: flex;

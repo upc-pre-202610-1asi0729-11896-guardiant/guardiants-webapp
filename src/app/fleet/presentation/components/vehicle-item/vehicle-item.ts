@@ -26,4 +26,3 @@ export class VehicleItemComponent {
     return statusMap[this.vehicle?.status] || this.vehicle?.status || 'Desconocido';
   }
 }
-

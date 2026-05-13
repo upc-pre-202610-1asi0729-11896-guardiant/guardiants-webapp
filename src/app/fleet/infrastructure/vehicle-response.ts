@@ -48,6 +48,36 @@ export interface VehicleResource extends BaseResource {
    * Vehicle last update time.
    */
   lastUpdated?: string;
+
+  /**
+   * Vehicle mileage in kilometers.
+   */
+  mileageKm?: number;
+
+  /**
+   * Last latitude captured for the vehicle.
+   */
+  lastLat?: number;
+
+  /**
+   * Last longitude captured for the vehicle.
+   */
+  lastLng?: number;
+
+  /**
+   * Current speed in kilometers per hour.
+   */
+  speedKmh?: number;
+
+  /**
+   * Current battery percentage.
+   */
+  batteryPct?: number;
+
+  /**
+   * Device connection state.
+   */
+  deviceStatus?: string;
 }
 
 /**

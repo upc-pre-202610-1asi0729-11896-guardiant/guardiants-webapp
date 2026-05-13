@@ -15,6 +15,12 @@ export class Vehicle implements BaseEntity {
     createdAt: Date;
     lastLocation?: string;
     lastUpdated?: string;
+    mileageKm?: number;
+    lastLat?: number;
+    lastLng?: number;
+    speedKmh?: number;
+    batteryPct?: number;
+    deviceStatus?: string;
   }) {
     this._id = props.id;
     this._organizationId = props.organizationId;
@@ -26,6 +32,12 @@ export class Vehicle implements BaseEntity {
     this._createdAt = props.createdAt;
     this._lastLocation = props.lastLocation;
     this._lastUpdated = props.lastUpdated;
+    this._mileageKm = props.mileageKm;
+    this._lastLat = props.lastLat;
+    this._lastLng = props.lastLng;
+    this._speedKmh = props.speedKmh;
+    this._batteryPct = props.batteryPct;
+    this._deviceStatus = props.deviceStatus;
   }
 
   private _id: string;
@@ -126,5 +138,65 @@ export class Vehicle implements BaseEntity {
 
   set lastUpdated(value: string | undefined) {
     this._lastUpdated = value;
+  }
+
+  private _mileageKm?: number;
+
+  get mileageKm(): number | undefined {
+    return this._mileageKm;
+  }
+
+  set mileageKm(value: number | undefined) {
+    this._mileageKm = value;
+  }
+
+  private _lastLat?: number;
+
+  get lastLat(): number | undefined {
+    return this._lastLat;
+  }
+
+  set lastLat(value: number | undefined) {
+    this._lastLat = value;
+  }
+
+  private _lastLng?: number;
+
+  get lastLng(): number | undefined {
+    return this._lastLng;
+  }
+
+  set lastLng(value: number | undefined) {
+    this._lastLng = value;
+  }
+
+  private _speedKmh?: number;
+
+  get speedKmh(): number | undefined {
+    return this._speedKmh;
+  }
+
+  set speedKmh(value: number | undefined) {
+    this._speedKmh = value;
+  }
+
+  private _batteryPct?: number;
+
+  get batteryPct(): number | undefined {
+    return this._batteryPct;
+  }
+
+  set batteryPct(value: number | undefined) {
+    this._batteryPct = value;
+  }
+
+  private _deviceStatus?: string;
+
+  get deviceStatus(): string | undefined {
+    return this._deviceStatus;
+  }
+
+  set deviceStatus(value: string | undefined) {
+    this._deviceStatus = value;
   }
 }

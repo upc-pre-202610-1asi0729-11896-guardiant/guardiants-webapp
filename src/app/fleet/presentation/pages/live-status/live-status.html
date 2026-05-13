@@ -1,0 +1,106 @@
+<section class="live-status-page">
+  <div class="content-header">
+	<div>
+	  <h1 class="greeting">Live Status</h1>
+	  <p class="subtitle">Monitoreo en tiempo real de toda la flota con datos del mock API.</p>
+	</div>
+
+	<div class="headline-metrics">
+	  <div class="headline-chip"><span>Vehículos</span><strong>{{ vehicles().length }}</strong></div>
+	  <div class="headline-chip"><span>Activos</span><strong>{{ activeVehicles().length }}</strong></div>
+	  <div class="headline-chip"><span>Mant.</span><strong>{{ maintenanceVehicles().length }}</strong></div>
+	  <div class="headline-chip"><span>Km total</span><strong>{{ totalMileageKm() }}</strong></div>
+	  <div class="headline-chip"><span>Avg speed</span><strong>{{ averageSpeed() }} km/h</strong></div>
+	</div>
+  </div>
+
+  <div class="live-status-grid">
+	<section class="vehicle-list-panel">
+	  <article
+		class="vehicle-list-card"
+		*ngFor="let vehicle of vehicles(); trackBy: trackByVehicleId"
+		[class.is-selected]="selectedVehicle() === vehicle"
+		(click)="selectVehicle(vehicle)">
+		<div class="vehicle-list-header">
+		  <div>
+			<div class="vehicle-plate">{{ vehicle.plate }}</div>
+			<div class="vehicle-model">{{ vehicle.brand }} {{ vehicle.model }}</div>
+		  </div>
+		  <span class="vehicle-badge" [class]="'vehicle-badge--' + statusClass(vehicle)">
+			{{ statusLabel(vehicle) }}
+		  </span>
+		</div>
+
+		<div class="vehicle-list-meta">
+		  <div class="meta-row">
+			<span class="meta-label">Ubicación</span>
+			<strong>{{ vehicle.lastLocation ?? 'Sin datos' }}</strong>
+		  </div>
+		  <div class="meta-row">
+			<span class="meta-label">Mileage</span>
+			<strong>{{ vehicle.mileageKm ?? 0 }} km</strong>
+		  </div>
+		  <div class="meta-row compact-grid">
+			<div>
+			  <span class="meta-label">Speed</span>
+			  <strong>{{ vehicle.speedKmh ?? 0 }} km/h</strong>
+			</div>
+			<div>
+			  <span class="meta-label">Last update</span>
+			  <strong>{{ vehicle.lastUpdated ?? '--' }}</strong>
+			</div>
+		  </div>
+		</div>
+	  </article>
+
+	  <div class="loading-banner" *ngIf="isLoading()">Loading vehicles...</div>
+	  <div class="error-banner" *ngIf="error() && !isLoading()">{{ error() }}</div>
+	</section>
+
+	<section class="map-panel" *ngIf="selectedVehicle() as vehicle; else emptyMap">
+	  <div class="map-card">
+		<div class="map-card-header">
+		  <div>
+			<h2>{{ vehicle.plate }}</h2>
+			<p>{{ vehicle.brand }} {{ vehicle.model }} · {{ vehicle.lastLocation ?? 'Sin ubicación' }}</p>
+		  </div>
+		  <span class="map-status" [class]="'map-status--' + statusClass(vehicle)">
+			{{ statusLabel(vehicle) }}
+		  </span>
+		</div>
+
+		<div class="map-key-metrics">
+		  <article><span>Kilometraje</span><strong>{{ vehicle.mileageKm ?? 0 }} km</strong></article>
+		  <article><span>Velocidad</span><strong>{{ vehicle.speedKmh ?? 0 }} km/h</strong></article>
+		  <article><span>Lat</span><strong>{{ formatCoordinate(vehicle.lastLat) }}</strong></article>
+		  <article><span>Lng</span><strong>{{ formatCoordinate(vehicle.lastLng) }}</strong></article>
+		</div>
+
+		<div class="map-canvas">
+		  <div class="map-overlay">
+			<div class="map-pin"></div>
+			<div class="map-copy">
+			  <strong>{{ vehicle.lastLocation ?? 'Ubicación no disponible' }}</strong>
+			  <span>{{ deviceLabel(vehicle) }} · {{ vehicle.deviceStatus ?? 'UNKNOWN' }}</span>
+			</div>
+		  </div>
+		</div>
+
+		<div class="map-footer">
+		  <div><span>Last update</span><strong>{{ vehicle.lastUpdated ?? '--' }} ago</strong></div>
+		  <div><span>Battery</span><strong>{{ vehicle.batteryPct ?? 0 }}%</strong></div>
+		  <div><span>GPS</span><strong>{{ formatCoordinate(vehicle.lastLat) }}, {{ formatCoordinate(vehicle.lastLng) }}</strong></div>
+		</div>
+	  </div>
+	</section>
+
+	<ng-template #emptyMap>
+	  <section class="map-panel empty-panel">
+		<div class="empty-state"><p>No hay vehículos para mostrar</p></div>
+	  </section>
+	</ng-template>
+  </div>
+</section>
+
+
+

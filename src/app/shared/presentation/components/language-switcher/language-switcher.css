@@ -1,15 +1,20 @@
-mat-button-toggle-group {
-  border-radius: 10px;
-  overflow: hidden;
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #111;
 }
 
-mat-button-toggle {
-  background: #0f172a;
-  color: white;
-  border: 1px solid #00c2ff;
+.language {
+  opacity: 0.6;
 }
 
-mat-button-toggle.mat-button-toggle-checked {
-  background: #00c2ff;
-  color: white;
+.language.is-active {
+  opacity: 1;
+}
+
+.separator {
+  color: #111;
 }
