@@ -1,0 +1,242 @@
+<!-- src/app/iam/presentation/pages/register/register.html -->
+<div class="auth-shell">
+
+  <!-- Left panel -->
+  <aside class="auth-brand">
+    <div class="brand-content">
+      <div class="brand-logo">
+        <span class="logo-icon">👁</span>
+        <span class="logo-text">God's Tracker</span>
+      </div>
+      <h1 class="brand-tagline">
+        Únete a la red de<br>
+        <span class="brand-accent">seguridad inteligente.</span>
+      </h1>
+      <p class="brand-sub">
+        Elige tu perfil y empieza a proteger lo que más importa.
+      </p>
+
+      <div class="feature-list">
+        <div class="feature">
+          <mat-icon>gps_fixed</mat-icon>
+          <span>Rastreo GPS en tiempo real</span>
+        </div>
+        <div class="feature">
+          <mat-icon>notifications_active</mat-icon>
+          <span>Alertas de seguridad instantáneas</span>
+        </div>
+        <div class="feature">
+          <mat-icon>lock</mat-icon>
+          <span>Bloqueo remoto del vehículo</span>
+        </div>
+        <div class="feature">
+          <mat-icon>analytics</mat-icon>
+          <span>Reportes y analítica avanzada</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right panel -->
+  <main class="auth-form-panel">
+    <div class="form-wrapper">
+
+      <!-- Mobile logo -->
+      <div class="mobile-logo">
+        <span class="logo-icon">👁</span>
+        <span class="logo-text">God's Tracker</span>
+      </div>
+
+      <div class="form-header">
+        <h2>Crear cuenta</h2>
+        <p>Rellena el formulario para comenzar gratis.</p>
+      </div>
+
+      <!-- Error banner -->
+      @if (store.error()) {
+        <div class="error-banner" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ store.error() }}</span>
+        </div>
+      }
+
+      <!-- ── Step 1: Role selection ── -->
+      <section class="role-step">
+        <p class="step-label">1. ¿Cómo usarás God's Tracker?</p>
+        <div class="role-cards">
+
+          <button
+            type="button"
+            class="role-card"
+            [class.active]="selectedRole() === 'PERSONA_NATURAL'"
+            (click)="selectRole('PERSONA_NATURAL')"
+          >
+            <div class="role-card-icon">🚗</div>
+            <div class="role-card-body">
+              <span class="role-card-title">Persona Natural</span>
+              <span class="role-card-desc">Protege tu vehículo personal con alertas y GPS en vivo.</span>
+            </div>
+            @if (selectedRole() === 'PERSONA_NATURAL') {
+              <mat-icon class="role-check">check_circle</mat-icon>
+            }
+          </button>
+
+          <button
+            type="button"
+            class="role-card"
+            [class.active]="selectedRole() === 'EMPRESA'"
+            (click)="selectRole('EMPRESA')"
+          >
+            <div class="role-card-icon">🏢</div>
+            <div class="role-card-body">
+              <span class="role-card-title">Empresa</span>
+              <span class="role-card-desc">Gestiona flotas, conductores y reportes operacionales.</span>
+            </div>
+            @if (selectedRole() === 'EMPRESA') {
+              <mat-icon class="role-check">check_circle</mat-icon>
+            }
+          </button>
+
+        </div>
+      </section>
+
+      <!-- ── Step 2: Form ── -->
+      <form [formGroup]="stepTwoForm" (ngSubmit)="onSubmit()" novalidate class="register-form">
+        <p class="step-label">2. Tus datos</p>
+
+        <!-- Full name -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nombre completo</mat-label>
+          <mat-icon matPrefix>person_outline</mat-icon>
+          <input matInput formControlName="name" placeholder="Ej. Enrique Castillo" autocomplete="name" />
+          @if (nameCtrl.hasError('required') && nameCtrl.touched) {
+            <mat-error>El nombre es obligatorio.</mat-error>
+          }
+          @if (nameCtrl.hasError('minlength') && nameCtrl.touched) {
+            <mat-error>Mínimo 3 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Company fields (conditional) -->
+        @if (isEmpresa()) {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Razón social</mat-label>
+            <mat-icon matPrefix>business</mat-icon>
+            <input matInput formControlName="companyName" placeholder="Ej. Transportes Lima S.A.C." />
+            @if (companyCtrl.hasError('required') && companyCtrl.touched) {
+              <mat-error>La razón social es obligatoria.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>RUC (11 dígitos)</mat-label>
+            <mat-icon matPrefix>badge</mat-icon>
+            <input matInput formControlName="ruc" placeholder="20512345678" maxlength="11" />
+            @if (rucCtrl.hasError('required') && rucCtrl.touched) {
+              <mat-error>El RUC es obligatorio.</mat-error>
+            }
+            @if (rucCtrl.hasError('pattern') && rucCtrl.touched) {
+              <mat-error>El RUC debe tener exactamente 11 dígitos.</mat-error>
+            }
+          </mat-form-field>
+        }
+
+        <!-- Phone -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Teléfono (opcional)</mat-label>
+          <mat-icon matPrefix>phone_outline</mat-icon>
+          <input matInput formControlName="phone" placeholder="+51 999 888 777" autocomplete="tel" />
+          @if (phoneCtrl.hasError('pattern') && phoneCtrl.touched) {
+            <mat-error>Formato de teléfono inválido.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Email -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Correo electrónico</mat-label>
+          <mat-icon matPrefix>mail_outline</mat-icon>
+          <input matInput type="email" formControlName="email" placeholder="tu@correo.com" autocomplete="email" />
+          @if (emailCtrl.hasError('required') && emailCtrl.touched) {
+            <mat-error>El email es obligatorio.</mat-error>
+          }
+          @if (emailCtrl.hasError('email') && emailCtrl.touched) {
+            <mat-error>Email inválido.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Password -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <input
+            matInput
+            [type]="showPass() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Mín. 8 chars, mayús, número y símbolo"
+            autocomplete="new-password"
+          />
+          <button mat-icon-button matSuffix type="button" (click)="togglePass()">
+            <mat-icon>{{ showPass() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (passCtrl.hasError('required') && passCtrl.touched) {
+            <mat-error>La contraseña es obligatoria.</mat-error>
+          }
+          @if (passCtrl.hasError('minlength') && passCtrl.touched) {
+            <mat-error>Mínimo 8 caracteres.</mat-error>
+          }
+          @if (passCtrl.hasError('weakPassword') && passCtrl.touched) {
+            <mat-error>Debe incluir mayúscula, minúscula, número y símbolo.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Confirm password -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirmar contraseña</mat-label>
+          <mat-icon matPrefix>lock_reset</mat-icon>
+          <input
+            matInput
+            [type]="showConfirm() ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            placeholder="Repite tu contraseña"
+            autocomplete="new-password"
+          />
+          <button mat-icon-button matSuffix type="button" (click)="toggleConfirm()">
+            <mat-icon>{{ showConfirm() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (confirmCtrl.hasError('required') && confirmCtrl.touched) {
+            <mat-error>Confirma tu contraseña.</mat-error>
+          }
+          @if (stepTwoForm.hasError('passwordsMismatch') && confirmCtrl.touched) {
+            <mat-error>Las contraseñas no coinciden.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Submit -->
+        <button
+          mat-flat-button
+          type="submit"
+          class="submit-btn full-width"
+          [disabled]="store.isLoading()"
+        >
+          @if (store.isLoading()) {
+            <mat-progress-spinner diameter="20" mode="indeterminate" />
+            Creando cuenta…
+          } @else {
+            <mat-icon>how_to_reg</mat-icon>
+            Crear Cuenta Gratis
+          }
+        </button>
+
+      </form>
+
+      <mat-divider />
+
+      <p class="login-cta">
+        ¿Ya tienes cuenta?
+        <a routerLink="/login" class="login-link">Iniciar sesión</a>
+      </p>
+
+    </div>
+  </main>
+
+</div>
