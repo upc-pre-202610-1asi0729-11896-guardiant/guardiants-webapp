@@ -4,23 +4,20 @@
   <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
   <aside class="sidebar">
     <div class="brand-block">
-      <div class="brand-logo">
-        <span>◉</span>
-      </div>
-      <div class="brand-copy">
-        <strong>God's Tracker</strong>
-      </div>
+      <div class="brand-logo"><span>◉</span></div>
+      <div class="brand-copy"><strong>God's Tracker</strong></div>
     </div>
 
     <nav class="sidebar-nav">
-      <a class="sidebar-item" routerLink="/home" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">
+      <a class="sidebar-item" routerLink="/home" routerLinkActive="is-active">
         <span class="sidebar-icon">⌂</span>
         <span class="sidebar-label">Home</span>
       </a>
-      <a class="sidebar-item" routerLink="/live-status" routerLinkActive="is-active">
+      <a class="sidebar-item" routerLink="/home" routerLinkActive="is-active">
         <span class="sidebar-icon">⌖</span>
         <span class="sidebar-label">Live Status</span>
       </a>
+      <!-- 👇 Ruta corregida — coincide exactamente con app.routes.ts -->
       <a class="sidebar-item" routerLink="/security-alert" routerLinkActive="is-active">
         <span class="sidebar-icon">🔔</span>
         <span class="sidebar-label">Security Alert</span>
@@ -64,8 +61,8 @@
       </div>
     </header>
 
-    <!-- Page content injected here by child routes -->
-    <ng-content></ng-content>
+    <!-- 👇 CLAVE: router-outlet reemplaza ng-content -->
+    <router-outlet></router-outlet>
   </main>
 
 </div>

@@ -1,18 +1,14 @@
 // src/app/shared/presentation/components/app-shell/app-shell.ts
-//
-// Extrae el layout (sidebar + topbar) de home.html a un componente reutilizable.
-// Home y SecurityAlert solo necesitan proyectar su contenido con <ng-content>.
-
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { LanguageSwitcher } from '../../components/language-switcher/language-switcher';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, LanguageSwitcher],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, LanguageSwitcher],
   templateUrl: './app-shell.html',
   styleUrls: ['./app-shell.css'],
 })
