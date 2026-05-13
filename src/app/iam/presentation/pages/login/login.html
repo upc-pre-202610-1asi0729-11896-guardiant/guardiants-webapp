@@ -128,11 +128,15 @@
           [disabled]="store.isLoading()"
         >
           @if (store.isLoading()) {
-            <mat-progress-spinner diameter="20" mode="indeterminate" />
-            Ingresando…
+            <ng-container>
+              <mat-progress-spinner diameter="20" mode="indeterminate" />
+              Ingresando…
+            </ng-container>
           } @else {
-            <mat-icon>login</mat-icon>
-            Iniciar Sesión
+            <ng-container>
+              <mat-icon>login</mat-icon>
+              Iniciar Sesión
+            </ng-container>
           }
         </button>
 

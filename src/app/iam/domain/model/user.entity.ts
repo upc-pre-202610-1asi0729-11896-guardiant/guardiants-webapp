@@ -25,7 +25,8 @@ export class UserEntity {
   }
 
   get dashboardRoute(): string {
-    return this.isEmpresa ? '/dashboard/asset-panel' : '/dashboard/live-status';
+    // Actualiza estas rutas cuando agregues los módulos de fleet/empresa
+    return '/profile';
   }
 
   static fromJson(data: Record<string, unknown>): UserEntity {
