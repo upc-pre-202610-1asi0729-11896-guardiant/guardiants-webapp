@@ -1,0 +1,15 @@
+mat-button-toggle-group {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+mat-button-toggle {
+  background: #0f172a;
+  color: white;
+  border: 1px solid #00c2ff;
+}
+
+mat-button-toggle.mat-button-toggle-checked {
+  background: #00c2ff;
+  color: white;
+}
