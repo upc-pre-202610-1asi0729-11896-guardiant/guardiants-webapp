@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "mock:api": "json-server --watch db.json --port 3000",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -11,6 +12,7 @@
   "private": true,
   "packageManager": "npm@10.9.2",
   "dependencies": {
+    "@angular/animations": "^21.2.12",
     "@angular/cdk": "^21.2.9",
     "@angular/common": "^21.2.0",
     "@angular/compiler": "^21.2.0",
@@ -19,7 +21,10 @@
     "@angular/material": "^21.2.9",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@ngx-translate/core": "^17.0.0",
+    "@ngx-translate/http-loader": "^17.0.0",
     "rxjs": "~7.8.0",
+    "shared": "^0.2.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
@@ -27,6 +32,7 @@
     "@angular/cli": "^21.2.9",
     "@angular/compiler-cli": "^21.2.0",
     "jsdom": "^28.0.0",
+    "json-server": "^1.0.0-beta.15",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"

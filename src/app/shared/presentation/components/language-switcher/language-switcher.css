@@ -1,0 +1,20 @@
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #111;
+}
+
+.language {
+  opacity: 0.6;
+}
+
+.language.is-active {
+  opacity: 1;
+}
+
+.separator {
+  color: #111;
+}

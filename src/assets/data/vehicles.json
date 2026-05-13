@@ -1,0 +1,44 @@
+{
+  "vehicles": [
+    {
+      "id": "VEH-001",
+      "organizationId": "ORG-001",
+      "plate": "ABC-1234",
+      "brand": "Toyota",
+      "model": "Hilux",
+      "status": "ACTIVE",
+      "capacity": 1200,
+      "createdAt": "2026-01-15T10:30:00Z"
+    },
+    {
+      "id": "VEH-002",
+      "organizationId": "ORG-001",
+      "plate": "XYZ-5678",
+      "brand": "Chevrolet",
+      "model": "N300",
+      "status": "ACTIVE",
+      "capacity": 800,
+      "createdAt": "2026-02-20T14:45:00Z"
+    },
+    {
+      "id": "VEH-003",
+      "organizationId": "ORG-001",
+      "plate": "LMN-9012",
+      "brand": "Hino",
+      "model": "500 Series",
+      "status": "MAINTENANCE",
+      "capacity": 2000,
+      "createdAt": "2026-03-10T08:15:00Z"
+    },
+    {
+      "id": "VEH-004",
+      "organizationId": "ORG-001",
+      "plate": "PQR-3456",
+      "brand": "Hyundai",
+      "model": "HD65",
+      "status": "ACTIVE",
+      "capacity": 1500,
+      "createdAt": "2026-03-25T11:20:00Z"
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+// src/app/iam/presentation/pages/profile/profile.scss
+
+.profile-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+   .page-header {
+     display: flex;
+     align-items: center;
+     gap: 1.25rem;
+     margin-bottom: 2rem;
+   }
+
+.user-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-size: 1.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-info {
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.02em;
+  }
+}
+
+.user-badges {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  mat-icon { font-size: 0.9rem; width: 0.9rem; height: 0.9rem; }
+}
+
+.role-badge {
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+  color: var(--mat-sys-primary);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-primary) 25%, transparent);
+}
+
+.plan-badge {
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 12%, transparent);
+  color: var(--mat-sys-tertiary);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-tertiary) 25%, transparent);
+}
+
+// ── Error banner ──────────────────────────────────────────────────────────────
+   .error-banner {
+     display: flex;
+     align-items: center;
+     gap: 0.6rem;
+     padding: 0.75rem 1rem;
+     border-radius: 12px;
+     background: var(--mat-sys-error-container);
+     color: var(--mat-sys-on-error-container);
+     font-size: 0.88rem;
+     margin-bottom: 1.5rem;
+
+     mat-icon { font-size: 1.1rem; width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+   }
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+   .profile-grid {
+     display: grid;
+     grid-template-columns: 1fr 1fr;
+     gap: 1.25rem;
+
+     @media (max-width: 720px) { grid-template-columns: 1fr; }
+   }
+
+// ── Cards ─────────────────────────────────────────────────────────────────────
+   .profile-card {
+     border-radius: 16px !important;
+
+     mat-card-header { padding: 1.25rem 1.25rem 0.5rem; }
+     mat-card-content { padding: 0.5rem 1.25rem 1.25rem; }
+   }
+
+// ── Forms ─────────────────────────────────────────────────────────────────────
+   .profile-form {
+     display: flex;
+     flex-direction: column;
+     gap: 0.15rem;
+   }
+
+.full-width { width: 100%; }
+
+.card-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+
+  button {
+    border-radius: 10px !important;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    mat-progress-spinner {
+      --mdc-circular-progress-active-indicator-color: white;
+    }
+  }
+}

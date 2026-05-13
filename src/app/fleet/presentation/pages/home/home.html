@@ -1,0 +1,111 @@
+<section class="home-page">
+  <div class="home-header">
+    <h1 class="greeting">Hi, {{ userName() }}</h1>
+    <p class="subtitle">Fleet overview powered by live data from the mock API.</p>
+  </div>
+
+  <section class="summary-card" *ngIf="activeVehicle() as vehicle; else emptyState">
+    <div class="summary-main">
+      <div class="vehicle-title">
+        <span class="vehicle-icon">🚙</span>
+        <strong>Vehicle: {{ vehicle.status === 'ACTIVE' ? 'Active' : vehicle.status }}</strong>
+        <span class="status-dot"></span>
+      </div>
+
+      <div class="vehicle-plate">{{ vehicle.plate }}</div>
+
+      <div class="summary-meta">
+        <div class="summary-row">
+          <span class="summary-marker">📍</span>
+          <span>{{ vehicle.lastLocation ?? 'Sin ubicación' }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-marker">◔</span>
+          <span>Updated {{ vehicle.lastUpdated ?? '--' }} ago</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-actions">
+      <button type="button" class="danger-button" (click)="toggleBlockMenu()">
+        <span>🔒</span>
+        <span>Block Vehicle</span>
+      </button>
+      <button type="button" class="ghost-button">View on Map</button>
+    </div>
+
+    <!-- Submenú de bloqueo de vehículos -->
+    <div class="block-menu" *ngIf="isBlockMenuOpen()">
+      <div class="block-menu-header">
+        <h3>Select Vehicle to Block</h3>
+        <button type="button" class="close-btn" (click)="toggleBlockMenu()">✕</button>
+      </div>
+      <div class="block-menu-content">
+        <div
+          *ngFor="let vehicle of vehicles()"
+          class="vehicle-option"
+          [class.blocked]="vehicle.status === 'BLOCKED'"
+        >
+          <div class="vehicle-info">
+            <span class="vehicle-plate">{{ vehicle.plate }}</span>
+            <span class="vehicle-model">{{ vehicle.brand }} {{ vehicle.model }}</span>
+            <span class="vehicle-status" [class.status-blocked]="vehicle.status === 'BLOCKED'">
+              {{ vehicle.status }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="action-btn"
+            (click)="blockVehicle(vehicle.id)"
+            [disabled]="vehicle.status === 'BLOCKED' || isBlockingVehicle()"
+          >
+            {{ vehicle.status === 'BLOCKED' ? 'Blocked' : 'Block' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <ng-template #emptyState>
+    <section class="summary-card empty-summary">
+      <p>No vehicles registered</p>
+    </section>
+  </ng-template>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <div class="stat-head">
+        <span class="stat-icon">⚠</span>
+        <span class="stat-label">ALERTS TODAY</span>
+      </div>
+      <strong class="stat-value">{{ alertsToday() }}</strong>
+    </article>
+    <article class="stat-card">
+      <div class="stat-head">
+        <span class="stat-icon">🗺</span>
+        <span class="stat-label">Routes</span>
+      </div>
+      <strong class="stat-value">{{ routesCount() }}</strong>
+    </article>
+    <article class="stat-card">
+      <div class="stat-head">
+        <span class="stat-icon">⌖</span>
+        <span class="stat-label">GPS</span>
+      </div>
+      <strong class="stat-value">{{ activeGps() }}</strong>
+    </article>
+    <article class="stat-card">
+      <div class="stat-head">
+        <span class="stat-icon">▭</span>
+        <span class="stat-label">Battery</span>
+      </div>
+      <strong class="stat-value">{{ activeBattery() }}%</strong>
+    </article>
+  </section>
+
+  <section class="map-placeholder" aria-label="map placeholder"></section>
+
+  <div class="loading-banner" *ngIf="isLoading()">Loading vehicles...</div>
+  <div class="error-banner" *ngIf="error() && !isLoading()">{{ error() }}</div>
+</section>
+

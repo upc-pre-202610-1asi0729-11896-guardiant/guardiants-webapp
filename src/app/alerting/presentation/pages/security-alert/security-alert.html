@@ -1,0 +1,126 @@
+<!-- src/app/alerting/presentation/pages/security-alert/security-alert.html -->
+<!-- 👆 Sin <app-shell> wrapper — el AppShell ya envuelve esto desde el router -->
+
+<section class="alert-page">
+
+  <!-- ── Left: Alerts list ───────────────────────────────────────────────── -->
+  <div class="alerts-main">
+
+    <div class="page-header">
+      <h1 class="page-title">Security Alert</h1>
+      <button type="button" class="icon-button-sm" aria-label="history">🕐</button>
+    </div>
+
+    <div class="filter-tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-active]="readFilter() === 'all'"
+        (click)="setReadFilter('all')">
+        All
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-active]="readFilter() === 'unread'"
+        (click)="setReadFilter('unread')">
+        Unread
+        <span class="badge" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
+      </button>
+    </div>
+
+    <div class="time-filters">
+      <button
+        *ngFor="let tf of timeFilters"
+        type="button"
+        class="chip"
+        [class.chip-active]="timeFilter() === tf.value"
+        (click)="setTimeFilter(tf.value)">
+        {{ tf.label }}
+      </button>
+    </div>
+
+    <div class="loading-banner" *ngIf="isLoading()">Loading alerts…</div>
+    <div class="error-banner" *ngIf="error() && !isLoading()">{{ error() }}</div>
+
+    <div class="empty-state" *ngIf="!isLoading() && !error() && alerts().length === 0">
+      <span>✅</span>
+      <p>No alerts for the selected period.</p>
+    </div>
+
+    <div class="alert-list" *ngIf="!isLoading()">
+      <article class="alert-card" *ngFor="let alert of alerts()">
+        <div class="alert-card-left">
+          <div class="alert-type-row">
+            <span class="alert-icon">{{ alert.typeIcon }}</span>
+            <span class="alert-title">{{ alert.typeLabel }}</span>
+          </div>
+          <div class="alert-location">
+            <span class="loc-icon">📍</span>
+            <span>{{ alert.location }}</span>
+          </div>
+          <div class="alert-detail">
+            <span class="detail-dot" [class.dot-red]="alert.isHighPriority"></span>
+            <span>{{ alert.detail }}</span>
+          </div>
+        </div>
+        <div class="alert-card-actions">
+          <button type="button" class="btn-view" (click)="viewDetail(alert.id)">
+            View Detail ▶
+          </button>
+          <button type="button" class="btn-block" (click)="blockVehicle(alert.vehicleId)">
+            Block Vehicle ▶
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <div class="map-placeholder" aria-label="map placeholder"></div>
+  </div>
+
+  <!-- ── Right: Sidebar panel ────────────────────────────────────────────── -->
+  <aside class="alert-sidebar">
+
+    <section class="recent-alerts-panel">
+      <h3 class="panel-title">Recent Alerts</h3>
+      <div class="recent-list">
+        <div class="recent-item" *ngFor="let ra of recentAlerts()">
+          <div class="recent-info">
+            <span class="recent-desc">{{ ra.typeLabel }}</span>
+            <span class="recent-time">{{ timeAgo(ra.createdAt) }}</span>
+          </div>
+          <button type="button" class="btn-view-sm" (click)="viewDetail(ra.id)">View</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="quick-actions-panel">
+      <button type="button" class="quick-action">
+        <span class="qa-icon">🔒</span>
+        <span>BLOCK</span>
+      </button>
+      <button type="button" class="quick-action">
+        <span class="qa-icon">🔑</span>
+        <span>ROBBERY REPORT</span>
+      </button>
+      <button type="button" class="quick-action">
+        <span class="qa-icon">📍</span>
+        <span>SHARE LOCATION</span>
+      </button>
+    </section>
+
+    <section class="user-panel">
+      <span class="user-icon">👤</span>
+      <div class="user-info">
+        <span class="user-name">{{ userName() }}</span>
+        <span class="user-plan">Plan: {{ userPlan() }}</span>
+        <span class="device-status">
+          DEVICE: CONNECTED
+          <span class="status-dot"></span>
+        </span>
+      </div>
+    </section>
+
+  </aside>
+
+</section>

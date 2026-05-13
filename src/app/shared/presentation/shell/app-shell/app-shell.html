@@ -1,0 +1,54 @@
+<div class="dashboard-shell">
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="brand-logo"><span>◉</span></div>
+      <div class="brand-copy"><strong>God's Tracker</strong></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" routerLink="/home" routerLinkActive="is-active">
+        <span class="sidebar-icon">⌂</span>
+        <span class="sidebar-label">Home</span>
+      </a>
+      <a class="sidebar-item" routerLink="/live-status" routerLinkActive="is-active">
+        <span class="sidebar-icon">⌖</span>
+        <span class="sidebar-label">Live Status</span>
+      </a>
+      <a class="sidebar-item" routerLink="/security-alert" routerLinkActive="is-active">
+        <span class="sidebar-icon">🔔</span>
+        <span class="sidebar-label">Security Alert</span>
+      </a>
+      <button type="button" class="sidebar-item sidebar-item--disabled" disabled>
+        <span class="sidebar-icon">🗺</span>
+        <span class="sidebar-label">Routes History</span>
+      </button>
+      <button type="button" class="sidebar-item sidebar-item--disabled" disabled>
+        <span class="sidebar-icon">⚙</span>
+        <span class="sidebar-label">Configuration</span>
+      </button>
+    </nav>
+
+    <button type="button" class="logout-button" (click)="logout()">
+      <span class="sidebar-icon">↩</span>
+      <span>Log Out</span>
+    </button>
+  </aside>
+
+  <main class="dashboard-main">
+    <header class="topbar">
+      <label class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Search vehicle" />
+      </label>
+
+      <div class="topbar-actions">
+        <button type="button" class="icon-button" aria-label="notifications">🔔</button>
+        <a class="icon-button profile-button" routerLink="/profile" aria-label="profile">👤</a>
+        <app-language-switcher></app-language-switcher>
+      </div>
+    </header>
+
+    <router-outlet></router-outlet>
+  </main>
+
+</div>
