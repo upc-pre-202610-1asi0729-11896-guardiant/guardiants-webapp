@@ -1,0 +1,38 @@
+{
+  "app": {
+    "title": "GOD's Tracker"
+  },
+  "startup": {
+    "name": "GuardiAnts"
+  },
+  "utils": {
+    "press-here": "Press here",
+    "click-here": "Click here"
+  },
+  "iam": {
+    "sign-up": "Sign Up",
+    "login": "Login",
+    "user-authenticated": "User Authenticated",
+    "onboarding": "Onboarding"
+  },
+  "fleet": {
+
+  },
+  "query": {
+
+  },
+  "subscription": {
+    "thanks-purchase": "Thank you for your purchase"
+  },
+  "telemetry": {
+    "protocols": {
+      "canbus": {
+        "name": "CAN bus"
+      }
+    }
+  },
+  "alerting": {
+    "new-alert": "New alert"
+  },
+  "commands": {}
+}
