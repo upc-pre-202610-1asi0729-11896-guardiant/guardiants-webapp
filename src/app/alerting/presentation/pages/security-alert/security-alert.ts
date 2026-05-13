@@ -3,7 +3,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject } from '@angular/core';
 import { AlertStore, AlertTimeFilter, AlertReadFilter } from '../../../application/alert.store';
-import { AppShell } from '../../../../shared/presentation/components/app-shell/app-shell';
+import { AppShell } from '../../../../shared/presentation/shell/app-shell/app-shell';
 import { IamStore } from '../../../../iam/application/iam.store';
 
 @Component({
