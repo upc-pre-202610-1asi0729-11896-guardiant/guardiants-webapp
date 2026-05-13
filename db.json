@@ -1,54 +1,53 @@
 {
   "vehicles": [
     {
-      "id": "VEH-001",
-      "organizationId": "ORG-001",
-      "plate": "ABC-87521",
-      "brand": "Toyota",
-      "model": "Hilux",
+      "id": "v1",
+      "plate": "ABC-123",
       "status": "ACTIVE",
-      "capacity": 1200,
-      "createdAt": "2026-01-15T10:30:00Z",
-      "lastLocation": "La Molina",
-      "lastUpdated": "10 sec"
+      "lastLocation": "Av. Javier Prado 1234, Lima",
+      "lastUpdated": "5 min"
     },
     {
-      "id": "VEH-002",
-      "organizationId": "ORG-001",
-      "plate": "XYZ-5678",
-      "brand": "Chevrolet",
-      "model": "N300",
-      "status": "ACTIVE",
-      "capacity": 800,
-      "createdAt": "2026-02-20T14:45:00Z",
-      "lastLocation": "San Isidro",
-      "lastUpdated": "2 min"
-    },
-    {
-      "id": "VEH-003",
-      "organizationId": "ORG-001",
-      "plate": "LMN-9012",
-      "brand": "Hino",
-      "model": "500 Series",
+      "id": "v2",
+      "plate": "XYZ-789",
       "status": "MAINTENANCE",
-      "capacity": 2000,
-      "createdAt": "2026-03-10T08:15:00Z",
-      "lastLocation": "Miraflores",
-      "lastUpdated": "1 hour"
+      "lastLocation": "Av. La Marina 567, Lima",
+      "lastUpdated": "2 hours"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "a1",
+      "vehicleId": "v1",
+      "typeLabel": "Unauthorized Movement",
+      "typeIcon": "🚨",
+      "location": "Av. Javier Prado 1234, Lima",
+      "detail": "Vehicle moved outside scheduled hours",
+      "isHighPriority": true,
+      "isRead": false,
+      "createdAt": "2025-05-13T10:30:00.000Z"
     },
     {
-      "id": "VEH-004",
-      "organizationId": "ORG-001",
-      "plate": "PQR-3456",
-      "brand": "Hyundai",
-      "model": "HD65",
-      "status": "ACTIVE",
-      "capacity": 1500,
-      "createdAt": "2026-03-25T11:20:00Z",
-      "lastLocation": "Surco",
-      "lastUpdated": "30 sec"
+      "id": "a2",
+      "vehicleId": "v2",
+      "typeLabel": "Geofence Breach",
+      "typeIcon": "📍",
+      "location": "Av. La Marina 567, Lima",
+      "detail": "Vehicle exited designated zone",
+      "isHighPriority": false,
+      "isRead": false,
+      "createdAt": "2025-05-13T09:15:00.000Z"
+    },
+    {
+      "id": "a3",
+      "vehicleId": "v1",
+      "typeLabel": "Hard Braking",
+      "typeIcon": "⚠️",
+      "location": "Panamericana Norte Km 23",
+      "detail": "Sudden deceleration detected",
+      "isHighPriority": false,
+      "isRead": true,
+      "createdAt": "2025-05-13T08:00:00.000Z"
     }
   ]
 }
-
-
