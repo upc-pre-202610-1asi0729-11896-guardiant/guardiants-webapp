@@ -1,23 +1,17 @@
 // src/app/app.routes.ts
-
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './iam/application/auth.guard';
 
 export const routes: Routes = [
-  // ── Default redirect ───────────────────────────────────────────────────────
+  // ── Default redirect ──────────────────────────────────────────────────────
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+
+  // ── Guest-only ────────────────────────────────────────────────────────────
   {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full',
+    path: 'login',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./iam/presentation/pages/login/login').then((m) => m.Login),
   },
-
-
-  {
-    path: 'home',
-    loadComponent: () => import('./fleet/presentation/pages/home/home').then((m) => m.Home),
-  },
-  // ── IAM (guest-only) ───────────────────────────────────────────────────────
-
   {
     path: 'register',
     canActivate: [guestGuard],
@@ -25,22 +19,34 @@ export const routes: Routes = [
       import('./iam/presentation/pages/register/register').then((m) => m.Register),
   },
 
-  // ── Profile (protected, standalone) ───────────────────────────────────────
+  // ── Protected shell (sidebar + topbar viven aquí) ─────────────────────────
   {
-    path: 'profile',
+    path: '',
     canActivate: [authGuard],
-    loadComponent: () => import('./iam/presentation/pages/profile/profile').then((m) => m.Profile),
-  },
-  {
-    path: 'login',
-    canActivate: [guestGuard],
-    loadComponent: () => import('./iam/presentation/pages/login/login').then((m) => m.Login),
+    loadComponent: () =>
+      import('./shared/presentation/shell/app-shell/app-shell').then((m) => m.AppShell),
+    children: [
+      {
+        path: 'home',
+        loadComponent: () => import('./fleet/presentation/pages/home/home').then((m) => m.Home),
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./iam/presentation/pages/profile/profile').then((m) => m.Profile),
+      },
+      {
+        path: 'security-alert',
+        loadComponent: () =>
+          import('./alerting/presentation/pages/security-alert/security-alert').then(
+            (m) => m.SecurityAlert,
+          ),
+      },
+      // Aquí irán las futuras rutas protegidas: routes-history, configuration, etc.
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
+    ],
   },
 
-
-  // ── Catch-all ──────────────────────────────────────────────────────────────
-  {
-    path: '**',
-    redirectTo: 'login',
-  },
+  // ── Catch-all ─────────────────────────────────────────────────────────────
+  { path: '**', redirectTo: 'login' },
 ];
