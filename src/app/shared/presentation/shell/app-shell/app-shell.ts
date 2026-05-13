@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { IamStore } from '../../../../iam/application/iam.store';
-import { LanguageSwitcher } from '../language-switcher/language-switcher';
+import { LanguageSwitcher } from '../../components/language-switcher/language-switcher';
 
 @Component({
   selector: 'app-shell',
