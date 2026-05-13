@@ -1,5 +1,5 @@
 import { BaseEntity } from './base-entity';
-import { BaseResource, BaseResponse } from './base-response';
+import { BaseResource } from './base-response';
 
 /**
  * Converts resources into entities and vice versa.
@@ -7,7 +7,7 @@ import { BaseResource, BaseResponse } from './base-response';
 export interface BaseAssembler<
   TEntity extends BaseEntity,
   TResource extends BaseResource,
-  TResponse extends BaseResponse,
+  TResponse,
 > {
   /**
    * Converts resource into entity.

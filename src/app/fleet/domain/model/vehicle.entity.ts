@@ -13,6 +13,8 @@ export class Vehicle implements BaseEntity {
     status: string;
     capacity: number;
     createdAt: Date;
+    lastLocation?: string;
+    lastUpdated?: string;
   }) {
     this._id = props.id;
     this._organizationId = props.organizationId;
@@ -22,6 +24,8 @@ export class Vehicle implements BaseEntity {
     this._status = props.status;
     this._capacity = props.capacity;
     this._createdAt = props.createdAt;
+    this._lastLocation = props.lastLocation;
+    this._lastUpdated = props.lastUpdated;
   }
 
   private _id: string;
@@ -102,5 +106,25 @@ export class Vehicle implements BaseEntity {
 
   set createdAt(value: Date) {
     this._createdAt = value;
+  }
+
+  private _lastLocation?: string;
+
+  get lastLocation(): string | undefined {
+    return this._lastLocation;
+  }
+
+  set lastLocation(value: string | undefined) {
+    this._lastLocation = value;
+  }
+
+  private _lastUpdated?: string;
+
+  get lastUpdated(): string | undefined {
+    return this._lastUpdated;
+  }
+
+  set lastUpdated(value: string | undefined) {
+    this._lastUpdated = value;
   }
 }

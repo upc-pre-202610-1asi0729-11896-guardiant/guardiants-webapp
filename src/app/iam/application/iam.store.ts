@@ -1,6 +1,6 @@
 // src/app/iam/application/iam.store.ts
 
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { UserEntity } from '../domain/model/user.entity';
@@ -70,10 +70,9 @@ export class IamStore {
 
   readonly isAuthenticated = computed(() => !!this._state().token && !!this._state().user);
   readonly isEmpresa = computed(() => this._state().user?.role === 'EMPRESA');
-  readonly isPersonaNatural = computed(() => this._state().user?.role === 'PERSONA_NATURAL');
   readonly userName = computed(() => this._state().user?.name ?? '');
   readonly userPlan = computed(() => this._state().user?.plan ?? 'BASIC');
-  readonly dashboardRoute = computed(() => this._state().user?.dashboardRoute ?? '/dashboard');
+  readonly dashboardRoute = computed(() => this._state().user?.dashboardRoute ?? '/home');
 
   // ── Actions ───────────────────────────────────────────────────────────────
 

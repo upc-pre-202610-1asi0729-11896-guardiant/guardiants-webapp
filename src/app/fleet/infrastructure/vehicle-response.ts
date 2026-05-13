@@ -38,6 +38,16 @@ export interface VehicleResource extends BaseResource {
    * Vehicle creation date.
    */
   createdAt: Date;
+
+  /**
+   * Vehicle last known location.
+   */
+  lastLocation?: string;
+
+  /**
+   * Vehicle last update time.
+   */
+  lastUpdated?: string;
 }
 
 /**

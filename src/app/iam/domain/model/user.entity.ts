@@ -25,7 +25,7 @@ export class UserEntity {
   }
 
   get dashboardRoute(): string {
-    return this.isEmpresa ? '/dashboard/asset-panel' : '/dashboard/live-status';
+    return '/home';
   }
 
   static fromJson(data: Record<string, unknown>): UserEntity {

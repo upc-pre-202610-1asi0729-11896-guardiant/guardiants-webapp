@@ -2,21 +2,19 @@ import { BaseAssembler } from '../../shared/infrastructure/base-assembler';
 
 import { Vehicle } from '../domain/model/vehicle.entity';
 
-import { VehicleResponse, VehicleResource } from './vehicle-response';
+import { VehicleResource } from './vehicle-response';
 
 /**
  * Maps vehicle entities to and from API resources.
  */
-export class VehicleAssembler implements BaseAssembler<Vehicle, VehicleResource, VehicleResponse> {
+export class VehicleAssembler implements BaseAssembler<Vehicle, VehicleResource, VehicleResource[]> {
   /**
-   * Converts VehicleResponse into vehicle entities.
-   * @param response - API response containing vehicles.
+   * Converts a vehicle collection into vehicle entities.
+   * @param resources - API collection containing vehicles.
    * @returns Array of vehicle entities.
    */
-  toEntitiesFromResponse(response: VehicleResponse): Vehicle[] {
-    return response.vehicles.map((resource) =>
-      this.toEntityFromResource(resource as VehicleResource),
-    );
+  toEntitiesFromResponse(resources: VehicleResource[]): Vehicle[] {
+    return resources.map((resource) => this.toEntityFromResource(resource));
   }
 
   /**
@@ -34,6 +32,8 @@ export class VehicleAssembler implements BaseAssembler<Vehicle, VehicleResource,
       status: resource.status,
       capacity: resource.capacity,
       createdAt: resource.createdAt,
+      lastLocation: resource.lastLocation,
+      lastUpdated: resource.lastUpdated,
     });
   }
 
@@ -52,6 +52,8 @@ export class VehicleAssembler implements BaseAssembler<Vehicle, VehicleResource,
       status: entity.status,
       capacity: entity.capacity,
       createdAt: entity.createdAt,
+      lastLocation: entity.lastLocation,
+      lastUpdated: entity.lastUpdated,
     } as VehicleResource;
   }
 }

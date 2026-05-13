@@ -1,0 +1,141 @@
+<div class="dashboard-shell">
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="brand-logo">
+        <span>◉</span>
+      </div>
+      <div class="brand-copy">
+        <strong>God's Tracker</strong>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-item is-active" routerLink="/home" routerLinkActive="is-active">
+        <span class="sidebar-icon">⌂</span>
+        <span class="sidebar-label">Home</span>
+      </a>
+      <a class="sidebar-item" routerLink="/home">
+        <span class="sidebar-icon">⌖</span>
+        <span class="sidebar-label">Live Status</span>
+      </a>
+      <a class="sidebar-item" routerLink="/home">
+        <span class="sidebar-icon">🔔</span>
+        <span class="sidebar-label">Security Alert</span>
+      </a>
+      <a class="sidebar-item" routerLink="/home">
+        <span class="sidebar-icon">🗺</span>
+        <span class="sidebar-label">Routes History</span>
+      </a>
+      <a class="sidebar-item" routerLink="/home">
+        <span class="sidebar-icon">⚙</span>
+        <span class="sidebar-label">Configuration</span>
+      </a>
+    </nav>
+
+    <button type="button" class="logout-button" (click)="logout()">
+      <span class="sidebar-icon">↩</span>
+      <span>Log Out</span>
+    </button>
+  </aside>
+
+  <main class="dashboard-main">
+    <header class="topbar">
+      <label class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Search vehicle" />
+      </label>
+
+      <div class="topbar-actions">
+        <button type="button" class="icon-button" aria-label="notifications">🔔</button>
+        <a class="icon-button profile-button" routerLink="/profile" aria-label="profile">👤</a>
+        <app-language-switcher></app-language-switcher>
+      </div>
+    </header>
+
+    <section class="dashboard-content">
+      <div class="content-column">
+        <h1 class="greeting">Hi, {{ userName() }}</h1>
+
+        <section class="summary-card" *ngIf="activeVehicle() as vehicle; else emptyState">
+          <div class="summary-header">
+            <div class="vehicle-identity">
+              <div class="vehicle-title">
+                <span class="vehicle-icon">🚙</span>
+                <strong>Vehicle: Active</strong>
+                <span class="status-dot"></span>
+              </div>
+              <div class="vehicle-plate">{{ vehicle.plate }}</div>
+            </div>
+          </div>
+
+          <div class="summary-meta">
+            <div class="summary-row">
+              <span class="summary-marker location">📍</span>
+              <span>{{ vehicle.lastLocation }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-marker clock">◔</span>
+              <span>Updated {{ vehicle.lastUpdated }} ago</span>
+            </div>
+          </div>
+
+          <div class="summary-actions">
+            <button type="button" class="danger-button">
+              <span>🔒</span>
+              <span>Block Vehicle</span>
+            </button>
+            <button type="button" class="ghost-button">View on Map</button>
+          </div>
+        </section>
+
+        <ng-template #emptyState>
+          <section class="summary-card empty-summary">
+            <p>No vehicles registered</p>
+          </section>
+        </ng-template>
+
+        <section class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon">⚠</span>
+              <span class="stat-label">ALERTS TODAY</span>
+            </div>
+            <strong class="stat-value">{{ alertsToday() }}</strong>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon">🗺</span>
+              <span class="stat-label">Routes</span>
+            </div>
+            <strong class="stat-value">{{ routesCount() }}</strong>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon">⌖</span>
+              <span class="stat-label">GPS</span>
+            </div>
+            <strong class="stat-value">High</strong>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon">▭</span>
+              <span class="stat-label">Battery</span>
+            </div>
+            <strong class="stat-value">80%</strong>
+          </article>
+        </section>
+
+        <section class="map-placeholder" aria-label="map placeholder"></section>
+
+        <div class="loading-banner" *ngIf="isLoading()">
+          Loading vehicles...
+        </div>
+
+        <div class="error-banner" *ngIf="error() && !isLoading()">
+          {{ error() }}
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+

@@ -11,12 +11,13 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
 
-  // ── IAM (guest-only) ───────────────────────────────────────────────────────
+
   {
-    path: 'login',
-    canActivate: [guestGuard],
-    loadComponent: () => import('./iam/presentation/pages/login/login').then((m) => m.Login),
+    path: 'home',
+    loadComponent: () => import('./fleet/presentation/pages/home/home').then((m) => m.Home),
   },
+  // ── IAM (guest-only) ───────────────────────────────────────────────────────
+
   {
     path: 'register',
     canActivate: [guestGuard],
@@ -30,17 +31,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./iam/presentation/pages/profile/profile').then((m) => m.Profile),
   },
+  {
+    path: 'login',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./iam/presentation/pages/login/login').then((m) => m.Login),
+  },
 
-  // ── Fleet / dashboard routes (protected) ──────────────────────────────────
-  // Agrega aquí las rutas de src/app/fleet/ una vez que crees los componentes.
-  // Ejemplo:
-  // {
-  //   path: 'dashboard',
-  //   canActivate: [authGuard],
-  //   loadComponent: () =>
-  //     import('./fleet/presentation/shell/fleet-shell').then(m => m.FleetShell),
-  //   children: [ ... ],
-  // },
 
   // ── Catch-all ──────────────────────────────────────────────────────────────
   {
