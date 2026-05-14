@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { FleetStore } from '../../../application/fleet.store';
 import { Vehicle } from '../../../domain/model/vehicle.entity';
 import { VehicleMapComponent } from '../../components/vehicle-map/vehicle-map';
+import { VehicleSearchStore } from '../../../../shared/application/vehicle-search.store';
 
 @Component({
   selector: 'app-live-status',
@@ -16,6 +17,7 @@ import { VehicleMapComponent } from '../../components/vehicle-map/vehicle-map';
 export class LiveStatus implements OnInit {
   private readonly fleetStore = inject(FleetStore);
   private readonly fb = inject(FormBuilder);
+  private readonly vehicleSearchStore = inject(VehicleSearchStore);
 
   readonly vehicles = this.fleetStore.vehicles;
   readonly isLoading = this.fleetStore.isLoading;
@@ -24,6 +26,8 @@ export class LiveStatus implements OnInit {
   private readonly _selectedVehicle = signal<Vehicle | null>(null);
   readonly isEditVehicleOpen = signal(false);
   readonly isSavingVehicle = signal(false);
+  readonly isDeletingVehicle = signal(false);
+  readonly searchQuery = this.vehicleSearchStore.query;
 
   readonly editVehicleForm = this.fb.nonNullable.group({
     plate: ['', Validators.required],
@@ -38,16 +42,25 @@ export class LiveStatus implements OnInit {
     batteryPct: [100, [Validators.min(0), Validators.max(100)]],
   });
 
-  readonly selectedVehicle = computed(() => this._selectedVehicle() ?? this.vehicles()[0] ?? null);
-  readonly activeVehicles = computed(() => this.vehicles().filter((vehicle) => vehicle.status === 'ACTIVE'));
+  readonly filteredVehicles = computed(() => {
+    const query = this.searchQuery();
+    if (!query) return this.vehicles();
+    return this.vehicles().filter((vehicle) =>
+      [vehicle.plate, vehicle.brand, vehicle.model, vehicle.lastLocation, vehicle.status]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(query)),
+    );
+  });
+  readonly selectedVehicle = computed(() => this._selectedVehicle() ?? this.filteredVehicles()[0] ?? null);
+  readonly activeVehicles = computed(() => this.filteredVehicles().filter((vehicle) => vehicle.status === 'ACTIVE'));
   readonly maintenanceVehicles = computed(() =>
-    this.vehicles().filter((vehicle) => vehicle.status === 'MAINTENANCE'),
+    this.filteredVehicles().filter((vehicle) => vehicle.status === 'MAINTENANCE'),
   );
   readonly totalMileageKm = computed(() =>
-    this.vehicles().reduce((total, vehicle) => total + (vehicle.mileageKm ?? 0), 0),
+    this.filteredVehicles().reduce((total, vehicle) => total + (vehicle.mileageKm ?? 0), 0),
   );
   readonly averageSpeed = computed(() => {
-    const list = this.vehicles().filter((vehicle) => typeof vehicle.speedKmh === 'number');
+    const list = this.filteredVehicles().filter((vehicle) => typeof vehicle.speedKmh === 'number');
     if (!list.length) return 0;
     return Math.round(list.reduce((total, vehicle) => total + (vehicle.speedKmh ?? 0), 0) / list.length);
   });
@@ -113,6 +126,20 @@ export class LiveStatus implements OnInit {
     });
   }
 
+  deleteVehicle(vehicle: Vehicle): void {
+    const confirmed = window.confirm(`Delete vehicle ${vehicle.plate}?`);
+    if (!confirmed) return;
+
+    this.isDeletingVehicle.set(true);
+    this.fleetStore.deleteVehicle(vehicle.id).subscribe({
+      next: () => {
+        this._selectedVehicle.set(null);
+        this.isDeletingVehicle.set(false);
+      },
+      error: () => this.isDeletingVehicle.set(false),
+    });
+  }
+
   trackByVehicleId(_: number, vehicle: Vehicle): string {
     return vehicle.id;
   }
@@ -139,6 +166,11 @@ export class LiveStatus implements OnInit {
 
   formatCoordinate(value?: number): string {
     return typeof value === 'number' ? value.toFixed(4) : '--';
+  }
+
+  updateSearchQuery(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.vehicleSearchStore.setQuery(input.value);
   }
 }
 

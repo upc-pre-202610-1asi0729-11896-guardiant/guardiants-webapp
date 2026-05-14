@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { FleetStore, VehiclePayload } from '../../../application/fleet.store';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { VehicleMapComponent } from '../../components/vehicle-map/vehicle-map';
+import { VehicleSearchStore } from '../../../../shared/application/vehicle-search.store';
 
 @Component({
   selector: 'app-home',
@@ -17,11 +18,15 @@ export class Home implements OnInit {
   private readonly fleetStore = inject(FleetStore);
   private readonly iamStore = inject(IamStore);
   private readonly fb = inject(FormBuilder);
+  private readonly vehicleSearchStore = inject(VehicleSearchStore);
 
   readonly vehicles = this.fleetStore.vehicles;
   readonly isLoading = this.fleetStore.isLoading;
   readonly error = this.fleetStore.error;
   readonly userName = this.iamStore.userName;
+  readonly userRole = this.iamStore.userRole;
+  readonly organizationId = this.iamStore.organizationId;
+  readonly searchQuery = this.vehicleSearchStore.query;
 
   // Estado para el modal de bloqueo
   readonly isBlockMenuOpen = signal(false);
@@ -29,6 +34,7 @@ export class Home implements OnInit {
   readonly isAddVehicleOpen = signal(false);
   readonly isBlockingVehicle = signal(false);
   readonly isSavingVehicle = signal(false);
+  readonly isFullMapOpen = signal(false);
 
   readonly vehicleForm = this.fb.nonNullable.group({
     plate: ['', Validators.required],
@@ -41,11 +47,21 @@ export class Home implements OnInit {
     batteryPct: [100, [Validators.min(0), Validators.max(100)]],
   });
 
-  readonly activeVehicle = computed(() => this.vehicles().find((vehicle) => vehicle.status === 'ACTIVE') ?? this.vehicles()[0] ?? null);
-  readonly alertsToday = computed(() => this.vehicles().filter((vehicle) => vehicle.status === 'MAINTENANCE').length);
-  readonly routesCount = computed(() => this.vehicles().length);
+  readonly filteredVehicles = computed(() => {
+    const query = this.searchQuery();
+    if (!query) return this.vehicles();
+    return this.vehicles().filter((vehicle) =>
+      [vehicle.plate, vehicle.brand, vehicle.model, vehicle.lastLocation, vehicle.status]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(query)),
+    );
+  });
+  readonly activeVehicle = computed(() => this.filteredVehicles().find((vehicle) => vehicle.status === 'ACTIVE') ?? this.filteredVehicles()[0] ?? null);
+  readonly alertsToday = computed(() => this.filteredVehicles().filter((vehicle) => vehicle.status === 'MAINTENANCE').length);
+  readonly routesCount = computed(() => this.filteredVehicles().length);
   readonly activeBattery = computed(() => this.activeVehicle()?.batteryPct ?? 0);
   readonly activeGps = computed(() => typeof this.activeVehicle()?.lastLat === 'number');
+  readonly canAddVehicle = computed(() => this.userRole() !== 'PERSONA_NATURAL' || this.vehicles().length < 3);
 
   ngOnInit(): void {
     this.fleetStore.loadVehicles().subscribe({ error: () => void 0 });
@@ -64,9 +80,18 @@ export class Home implements OnInit {
   }
 
   toggleAddVehicle(): void {
+    if (!this.canAddVehicle()) return;
     this.isAddVehicleOpen.update((v) => !v);
     this.isBlockMenuOpen.set(false);
     this.isUnblockMenuOpen.set(false);
+  }
+
+  openFullMap(): void {
+    this.isFullMapOpen.set(true);
+  }
+
+  closeFullMap(): void {
+    this.isFullMapOpen.set(false);
   }
 
   blockVehicle(vehicleId: string): void {
@@ -104,7 +129,7 @@ export class Home implements OnInit {
     this.isSavingVehicle.set(true);
     const formValue = this.vehicleForm.getRawValue();
     const payload: VehiclePayload = {
-      organizationId: 'ORG-001',
+      organizationId: this.organizationId(),
       plate: formValue.plate,
       brand: formValue.brand,
       model: formValue.model,
@@ -117,6 +142,11 @@ export class Home implements OnInit {
       batteryPct: Number(formValue.batteryPct),
       deviceStatus: 'CONNECTED',
     };
+
+    if (!this.canAddVehicle()) {
+      this.isSavingVehicle.set(false);
+      return;
+    }
 
     this.fleetStore.createVehicle(payload).subscribe({
       next: () => {

@@ -1,7 +1,7 @@
 import { BaseEntity } from '../../../shared/infrastructure/base-entity';
 
 export type UserRole = 'EMPRESA' | 'PERSONA_NATURAL';
-export type UserPlan = 'BASIC' | 'PRO' | 'ENTERPRISE';
+export type UserPlan = 'BASIC' | 'MEDIUM' | 'PRO';
 
 export class UserEntity implements BaseEntity {
   constructor(props: {

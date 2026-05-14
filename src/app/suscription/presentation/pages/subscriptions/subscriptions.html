@@ -1,0 +1,23 @@
+<section class="subscriptions-page">
+  <header class="page-heading">
+    <h1>{{ (userRoleId() === 2 ? 'subscriptions.businessTitle' : 'subscriptions.personalTitle') | translate }}</h1>
+    <p>{{ 'subscriptions.subtitle' | translate }}</p>
+  </header>
+
+  <div class="loading-banner" *ngIf="isLoading()">{{ 'common.loading' | translate }}</div>
+  <div class="error-banner" *ngIf="error()">{{ error() }}</div>
+
+  <section class="plan-grid">
+    <article class="plan-card" *ngFor="let plan of normalizedPlans()" [class.is-current]="isCurrentPlan(plan)">
+      <div>
+        <span class="plan-tier">{{ plan.planTier }}</span>
+        <h2>{{ plan.name }}</h2>
+      </div>
+      <strong class="plan-price">S/ {{ plan.price }}</strong>
+      <p>{{ 'subscriptions.deviceLimit' | translate: { count: deviceLimit(plan) } }}</p>
+      <button type="button" (click)="selectPlan(plan)" [disabled]="isCurrentPlan(plan)">
+        {{ (isCurrentPlan(plan) ? 'subscriptions.currentPlan' : 'subscriptions.choosePlan') | translate }}
+      </button>
+    </article>
+  </section>
+</section>

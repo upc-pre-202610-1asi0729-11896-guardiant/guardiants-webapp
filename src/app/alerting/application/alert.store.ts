@@ -103,6 +103,28 @@ export class AlertStore {
       );
   }
 
+  resolveAlert(alertId: string): Observable<void> {
+    return this.http
+      .patch<void>(`${environment.apiBaseUrl}/alerts/${alertId}`, { status: 'RESOLVED' as AlertStatus })
+      .pipe(
+        tap(() => {
+          this._state.update((s) => ({
+            ...s,
+            alerts: s.alerts.map((a) =>
+              a.id === alertId
+                ? AlertEntity.fromJson({
+                    ...this._toPlain(a),
+                    status: 'RESOLVED',
+                  })
+                : a,
+            ),
+          }));
+        }),
+        map(() => void 0),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
   setTimeFilter(filter: AlertTimeFilter): void {
     this._patch({ timeFilter: filter });
   }

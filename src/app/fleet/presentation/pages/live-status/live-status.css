@@ -6,6 +6,48 @@
   color: #111;
 }
 
+.search-bar-section {
+  display: flex;
+  align-items: center;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  cursor: text;
+  transition: all 0.3s ease;
+}
+
+.search-box:hover {
+  border-color: #111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: #999;
+}
+
+.search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+  background: transparent;
+}
+
+.search-box input::placeholder {
+  color: #aaa;
+}
+
 .content-header {
   display: flex;
   align-items: flex-end;
@@ -182,6 +224,7 @@
 }
 
 .edit-button,
+.delete-button,
 .save-button {
   min-height: 34px;
   padding: 0 14px;
@@ -191,6 +234,12 @@
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.delete-button {
+  background: #fff;
+  color: #b71c1c;
+  border-color: #b71c1c;
 }
 
 .modal-backdrop {

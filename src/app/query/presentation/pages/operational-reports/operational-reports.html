@@ -1,0 +1,75 @@
+<section class="operational-reports-page">
+  <header class="page-heading">
+    <h1>{{ 'operationalReports.title' | translate }}</h1>
+    <p>{{ 'operationalReports.subtitle' | translate }}</p>
+  </header>
+
+  <div class="reports-controls">
+    <div class="reports-summary">
+      <div class="summary-card">
+        <span class="summary-icon">📊</span>
+        <div>
+          <strong>{{ reports().length }}</strong>
+          <span>{{ 'operationalReports.totalReports' | translate }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <span class="summary-icon">🚗</span>
+        <div>
+          <strong>{{ vehicles().length }}</strong>
+          <span>{{ 'operationalReports.totalVehicles' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-banner" *ngIf="isLoading()">{{ 'common.loading' | translate }}</div>
+  <div class="error-banner" *ngIf="error()">{{ error() }}</div>
+
+  <div class="reports-grid" *ngIf="!isLoading() && !error()">
+    <article class="report-card" *ngFor="let report of reports()">
+      <div class="report-header">
+        <div class="vehicle-info">
+          <h3>{{ getVehicleInfo(report.vehicleId)?.plate || 'Vehículo desconocido' }}</h3>
+          <p>{{ getVehicleInfo(report.vehicleId)?.brand }} {{ getVehicleInfo(report.vehicleId)?.model }}</p>
+        </div>
+        <div class="report-score">
+          <span class="score-value">{{ report.score }}</span>
+          <span class="score-label">/100</span>
+        </div>
+      </div>
+
+      <div class="report-details">
+        <div class="detail-row">
+          <span class="detail-label">{{ 'operationalReports.period' | translate }}</span>
+          <strong>{{ formatDate(report.periodStart) }} - {{ formatDate(report.periodEnd) }}</strong>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">{{ 'operationalReports.totalKm' | translate }}</span>
+          <strong>{{ report.totalKm }} km</strong>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">{{ 'operationalReports.generatedAt' | translate }}</span>
+          <strong>{{ formatDate(report.generatedAt) }}</strong>
+        </div>
+      </div>
+
+      <div class="report-summary">
+        <p>{{ report.summary }}</p>
+      </div>
+
+      <div class="report-actions">
+        <button type="button" class="download-btn" (click)="downloadReport(report)">
+          <span>📄</span>
+          {{ 'operationalReports.downloadReport' | translate }}
+        </button>
+      </div>
+    </article>
+
+    <div class="empty-state" *ngIf="reports().length === 0">
+      <div class="empty-icon">📊</div>
+      <h3>{{ 'operationalReports.noReports' | translate }}</h3>
+      <p>{{ 'operationalReports.noReportsDesc' | translate }}</p>
+    </div>
+  </div>
+</section>

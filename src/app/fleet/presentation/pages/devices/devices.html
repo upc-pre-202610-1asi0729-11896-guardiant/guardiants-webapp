@@ -1,0 +1,37 @@
+<section class="devices-page">
+  <header class="page-heading">
+    <h1>{{ 'devices.title' | translate }}</h1>
+    <p>{{ 'devices.subtitle' | translate: { used: devices().length, limit: deviceLimit() } }}</p>
+  </header>
+
+  <div class="limit-banner" *ngIf="!canAddDevice()">
+    {{ 'devices.limitReached' | translate }}
+  </div>
+  <div class="error-banner" *ngIf="error()">{{ error() }}</div>
+  <div class="success-banner" *ngIf="successMessage()">✓ {{ successMessage() }}</div>
+
+  <form class="device-form" [formGroup]="deviceForm" (ngSubmit)="addDevice()">
+    <label>
+      <span>{{ 'devices.vehicle' | translate }}</span>
+      <select formControlName="vehicleId">
+        <option value="">{{ 'devices.selectVehicle' | translate }}</option>
+        <option *ngFor="let vehicle of vehicles()" [value]="vehicle.id">{{ vehicle.plate }} - {{ vehicle.brand }} {{ vehicle.model }}</option>
+      </select>
+    </label>
+    <label>
+      <span>{{ 'devices.serialNumber' | translate }}</span>
+      <input type="text" formControlName="serialNumber" placeholder="GAT-GPS-006" />
+    </label>
+    <button type="submit" [disabled]="!canAddDevice() || isAddingDevice()">{{ 'devices.addDevice' | translate }}</button>
+  </form>
+
+  <section class="device-list">
+    <article class="device-card" *ngFor="let device of devices()">
+      <div>
+        <strong>{{ device.serialNumber }}</strong>
+        <span>{{ vehicleLabel(device.vehicleId) }}</span>
+      </div>
+      <span class="status-pill">{{ device.status }}</span>
+    </article>
+  </section>
+</section>

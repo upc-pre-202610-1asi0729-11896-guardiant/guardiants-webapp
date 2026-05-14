@@ -9,8 +9,12 @@
     "home": "Home",
     "liveStatus": "Live Status",
     "securityAlert": "Security Alert",
+    "subscriptions": "Subscriptions",
+    "devices": "Devices",
+    "operationalReports": "Operational Reports",
     "routesHistory": "Routes History",
     "configuration": "Configuration",
+    "profile": "Profile",
     "logout": "Log Out"
   },
   "common": {
@@ -32,7 +36,8 @@
     "ok": "OK",
     "plan": "Plan",
     "company": "Company",
-    "person": "Individual"
+    "person": "Individual",
+    "loading": "Loading..."
   },
   "validation": {
     "emailRequired": "Email is required.",
@@ -97,7 +102,7 @@
   },
   "home": {
     "greeting": "Hi, {{ name }}",
-    "subtitle": "Fleet overview powered by live data from the mock API.",
+    "subtitle": "Fleet overview powered by live data.",
     "vehicle": "Vehicle",
     "updatedAgo": "Updated {{ time }} ago",
     "blockVehicle": "Block Vehicle",
@@ -115,7 +120,9 @@
     "routes": "Routes",
     "battery": "Battery",
     "activeGpsHigh": "High",
-    "activeGpsNoSignal": "No signal"
+    "activeGpsNoSignal": "No signal",
+    "vehicleLimitReached": "Personal accounts can register up to 3 vehicles.",
+    "fleetMap": "Fleet map"
   },
   "fleet": {
     "status": {
@@ -132,13 +139,14 @@
   },
   "live": {
     "title": "Live Status",
-    "subtitle": "Real-time monitoring for the entire fleet with mock API data.",
+    "subtitle": "Real-time monitoring for the entire fleet.",
     "vehicles": "Vehicles",
     "active": "Active",
     "maintenanceShort": "Maint.",
     "totalKm": "Total km",
     "avgSpeed": "Avg speed",
     "editVehicle": "Edit Vehicle",
+    "deleteVehicle": "Delete Vehicle",
     "emptyMap": "No vehicles to display",
     "locationUnavailable": "Location unavailable"
   },
@@ -151,6 +159,10 @@
     "empty": "No alerts for the selected period.",
     "viewDetail": "View Detail",
     "blockVehicle": "Block Vehicle",
+    "unblockVehicle": "Unblock Vehicle",
+    "unblock": "UNBLOCK",
+    "resolve": "RESOLVE",
+    "severity": "Severity",
     "recentAlerts": "Recent Alerts",
     "block": "BLOCK",
     "robberyReport": "ROBBERY REPORT",
@@ -194,5 +206,36 @@
     "poweredBy": "Powered by",
     "about": "About",
     "contact": "Contact"
-  }
-}
+  },
+   "subscriptions": {
+     "title": "Plans and subscriptions",
+     "subtitle": "Choose a plan based on how many devices you need to manage.",
+     "deviceLimit": "Up to {{ count }} devices",
+     "currentPlan": "Current plan",
+     "choosePlan": "Choose plan",
+     "personalTitle": "Personal Plans",
+     "businessTitle": "Business Plans"
+   },
+   "devices": {
+     "title": "Devices",
+     "subtitle": "{{ used }} of {{ limit }} devices in use for your current plan.",
+     "limitReached": "Your current plan has reached its device limit.",
+     "vehicle": "Vehicle",
+     "selectVehicle": "Select vehicle",
+     "serialNumber": "Serial number",
+     "addDevice": "Add device",
+     "deviceAdded": "Device assigned successfully"
+   },
+   "operationalReports": {
+     "title": "Operational Reports",
+     "subtitle": "Analyze your fleet's driving performance.",
+     "totalReports": "Total reports",
+     "totalVehicles": "Total vehicles",
+     "period": "Period",
+     "totalKm": "Total km",
+     "generatedAt": "Generated on",
+     "downloadReport": "Download report",
+     "noReports": "No reports available",
+     "noReportsDesc": "Operational reports are generated automatically each month."
+   }
+ }

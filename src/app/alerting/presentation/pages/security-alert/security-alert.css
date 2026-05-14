@@ -149,6 +149,29 @@
   font-weight: 700;
 }
 
+.severity-pill,
+.vehicle-inline {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  background: #f1f3f6;
+  color: #555;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+}
+
+.severity-pill--high {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.vehicle-inline {
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
 .alert-location {
   display: flex;
   align-items: center;
@@ -354,6 +377,11 @@
   color: #444;
 }
 
+.quick-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .qa-icon {
   font-size: 18px;
   width: 22px;
@@ -418,6 +446,109 @@
   }
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.alert-detail-modal {
+  width: min(920px, 100%);
+  max-height: 92vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.modal-header h2,
+.vehicle-detail h3 {
+  margin: 0;
+}
+
+.modal-header p,
+.vehicle-detail p {
+  margin: 4px 0 0;
+  color: #555;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: #f0f0f0;
+  cursor: pointer;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.detail-grid article {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  padding: 10px 12px;
+}
+
+.detail-grid span {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #666;
+  font-weight: 700;
+}
+
+.vehicle-detail {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.alert-long-detail {
+  border-left: 3px solid #111;
+  padding-left: 12px;
+  color: #333;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-resolve {
+  min-width: 148px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 2px;
+  border: 1px solid #127333;
+  background: #127333;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 @media (max-width: 560px) {
   .alerts-main {
     padding: 20px 16px;
@@ -431,6 +562,10 @@
   .btn-view,
   .btn-block {
     width: 100%;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .alert-sidebar {

@@ -9,8 +9,12 @@
     "home": "Inicio",
     "liveStatus": "Estado en vivo",
     "securityAlert": "Alerta de seguridad",
+    "subscriptions": "Suscripciones",
+    "devices": "Dispositivos",
+    "operationalReports": "Reportes operativos",
     "routesHistory": "Historial de rutas",
     "configuration": "Configuracion",
+    "profile": "Perfil",
     "logout": "Cerrar sesion"
   },
   "common": {
@@ -32,7 +36,8 @@
     "ok": "OK",
     "plan": "Plan",
     "company": "Empresa",
-    "person": "Persona Natural"
+    "person": "Persona Natural",
+    "loading": "Cargando..."
   },
   "validation": {
     "emailRequired": "El email es obligatorio.",
@@ -97,7 +102,7 @@
   },
   "home": {
     "greeting": "Hola, {{ name }}",
-    "subtitle": "Resumen de flota con datos en vivo desde el mock API.",
+    "subtitle": "Resumen de flota con datos en vivo.",
     "vehicle": "Vehiculo",
     "updatedAgo": "Actualizado hace {{ time }}",
     "blockVehicle": "Bloquear vehiculo",
@@ -115,7 +120,9 @@
     "routes": "Rutas",
     "battery": "Bateria",
     "activeGpsHigh": "Alta",
-    "activeGpsNoSignal": "Sin senal"
+    "activeGpsNoSignal": "Sin senal",
+    "vehicleLimitReached": "Las cuentas personales pueden registrar hasta 3 vehiculos.",
+    "fleetMap": "Mapa de flota"
   },
   "fleet": {
     "status": {
@@ -132,13 +139,14 @@
   },
   "live": {
     "title": "Estado en vivo",
-    "subtitle": "Monitoreo en tiempo real de toda la flota con datos del mock API.",
+    "subtitle": "Monitoreo en tiempo real de toda la flota.",
     "vehicles": "Vehiculos",
     "active": "Activos",
     "maintenanceShort": "Mant.",
     "totalKm": "Km total",
     "avgSpeed": "Velocidad prom.",
     "editVehicle": "Editar vehiculo",
+    "deleteVehicle": "Eliminar vehiculo",
     "emptyMap": "No hay vehiculos para mostrar",
     "locationUnavailable": "Ubicacion no disponible"
   },
@@ -151,6 +159,10 @@
     "empty": "No hay alertas para el periodo seleccionado.",
     "viewDetail": "Ver detalle",
     "blockVehicle": "Bloquear vehiculo",
+    "unblockVehicle": "Desbloquear vehiculo",
+    "unblock": "DESBLOQUEAR",
+    "resolve": "RESOLVER",
+    "severity": "Severidad",
     "recentAlerts": "Alertas recientes",
     "block": "BLOQUEAR",
     "robberyReport": "REPORTE DE ROBO",
@@ -194,5 +206,36 @@
     "poweredBy": "Desarrollado con",
     "about": "Acerca de",
     "contact": "Contacto"
-  }
-}
+  },
+   "subscriptions": {
+     "title": "Planes y suscripciones",
+     "subtitle": "Elige un plan segun cuantos dispositivos necesitas administrar.",
+     "deviceLimit": "Hasta {{ count }} dispositivos",
+     "currentPlan": "Plan actual",
+     "choosePlan": "Elegir plan",
+     "personalTitle": "Planes Personales",
+     "businessTitle": "Planes Empresariales"
+   },
+   "devices": {
+     "title": "Dispositivos",
+     "subtitle": "{{ used }} de {{ limit }} dispositivos en uso para tu plan actual.",
+     "limitReached": "Tu plan actual alcanzo el limite de dispositivos.",
+     "vehicle": "Vehiculo",
+     "selectVehicle": "Selecciona vehiculo",
+     "serialNumber": "Numero de serie",
+     "addDevice": "Agregar dispositivo",
+     "deviceAdded": "Dispositivo asignado correctamente"
+   },
+   "operationalReports": {
+     "title": "Reportes Operativos",
+     "subtitle": "Analiza el rendimiento de conduccion de tu flota.",
+     "totalReports": "Reportes totales",
+     "totalVehicles": "Vehiculos totales",
+     "period": "Periodo",
+     "totalKm": "Km totales",
+     "generatedAt": "Generado el",
+     "downloadReport": "Descargar reporte",
+     "noReports": "No hay reportes disponibles",
+     "noReportsDesc": "Los reportes operativos se generan automaticamente cada mes."
+   }
+ }

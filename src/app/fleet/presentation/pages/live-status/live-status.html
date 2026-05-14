@@ -1,4 +1,11 @@
 <section class="live-status-page">
+  <div class="search-bar-section">
+    <label class="search-box">
+      <span class="search-icon">⌕</span>
+      <input type="text" [placeholder]="'app.searchVehicle' | translate" (input)="updateSearchQuery($event)" />
+    </label>
+  </div>
+
   <div class="content-header">
     <div>
       <h1 class="greeting">{{ 'live.title' | translate }}</h1>
@@ -6,7 +13,7 @@
     </div>
 
     <div class="headline-metrics">
-      <div class="headline-chip"><span>{{ 'live.vehicles' | translate }}</span><strong>{{ vehicles().length }}</strong></div>
+      <div class="headline-chip"><span>{{ 'live.vehicles' | translate }}</span><strong>{{ filteredVehicles().length }}</strong></div>
       <div class="headline-chip"><span>{{ 'live.active' | translate }}</span><strong>{{ activeVehicles().length }}</strong></div>
       <div class="headline-chip"><span>{{ 'live.maintenanceShort' | translate }}</span><strong>{{ maintenanceVehicles().length }}</strong></div>
       <div class="headline-chip"><span>{{ 'live.totalKm' | translate }}</span><strong>{{ totalMileageKm() }}</strong></div>
@@ -16,7 +23,7 @@
 
   <div class="live-status-grid">
     <section class="vehicle-list-panel">
-      <article class="vehicle-list-card" *ngFor="let vehicle of vehicles(); trackBy: trackByVehicleId" [class.is-selected]="selectedVehicle() === vehicle" (click)="selectVehicle(vehicle)">
+      <article class="vehicle-list-card" *ngFor="let vehicle of filteredVehicles(); trackBy: trackByVehicleId" [class.is-selected]="selectedVehicle() === vehicle" (click)="selectVehicle(vehicle)">
         <div class="vehicle-list-header">
           <div>
             <div class="vehicle-plate">{{ vehicle.plate }}</div>
@@ -67,6 +74,9 @@
             <button type="button" class="edit-button" (click)="openEditVehicle(vehicle)">
               {{ 'live.editVehicle' | translate }}
             </button>
+            <button type="button" class="delete-button" (click)="deleteVehicle(vehicle)" [disabled]="isDeletingVehicle()">
+              {{ 'live.deleteVehicle' | translate }}
+            </button>
           </div>
         </div>
 
@@ -77,7 +87,7 @@
           <article><span>Lng</span><strong>{{ formatCoordinate(vehicle.lastLng) }}</strong></article>
         </div>
 
-        <app-vehicle-map [vehicles]="vehicles()" [selectedVehicle]="vehicle" height="320px"></app-vehicle-map>
+        <app-vehicle-map [vehicles]="filteredVehicles()" [selectedVehicle]="vehicle" height="320px"></app-vehicle-map>
 
         <div class="map-footer">
           <div><span>{{ 'common.lastUpdate' | translate }}</span><strong>{{ vehicle.lastUpdated ?? '--' }}</strong></div>

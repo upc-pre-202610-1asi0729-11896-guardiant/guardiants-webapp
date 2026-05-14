@@ -18,6 +18,7 @@ export class AppShell {
 
   readonly userName = this.iamStore.userName;
   readonly userPlan = this.iamStore.userPlan;
+  readonly userRoleId = this.iamStore.userRoleId;
 
   logout(): void {
     this.iamStore.logout();

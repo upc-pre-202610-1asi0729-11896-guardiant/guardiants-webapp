@@ -114,6 +114,54 @@
   color: #111;
 }
 
+.ghost-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.static-map-preview {
+  pointer-events: none;
+}
+
+.limit-banner {
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #fff7e6;
+  color: #8a5a00;
+  font-weight: 700;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.full-map-modal {
+  width: min(1100px, 100%);
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.full-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.full-map-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
 .vehicle-form-panel {
   position: absolute;
   top: calc(100% + 8px);

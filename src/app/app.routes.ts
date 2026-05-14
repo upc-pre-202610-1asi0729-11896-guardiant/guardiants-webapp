@@ -40,13 +40,32 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./iam/presentation/pages/profile/profile').then((m) => m.Profile),
       },
-      {
-        path: 'security-alert',
-        loadComponent: () =>
-          import('./alerting/presentation/pages/security-alert/security-alert').then(
-            (m) => m.SecurityAlert,
-          ),
-      },
+       {
+         path: 'security-alert',
+         loadComponent: () =>
+           import('./alerting/presentation/pages/security-alert/security-alert').then(
+             (m) => m.SecurityAlert,
+           ),
+       },
+       {
+         path: 'devices',
+         loadComponent: () =>
+           import('./fleet/presentation/pages/devices/devices').then((m) => m.Devices),
+       },
+       {
+         path: 'subscriptions',
+         loadComponent: () =>
+           import('./suscription/presentation/pages/subscriptions/subscriptions').then(
+             (m) => m.Subscriptions,
+           ),
+       },
+       {
+         path: 'operational-reports',
+         loadComponent: () =>
+           import('./query/presentation/pages/operational-reports/operational-reports').then(
+             (m) => m.OperationalReports,
+           ),
+       },
       // Aquí irán las futuras rutas protegidas: routes-history, configuration, etc.
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ],

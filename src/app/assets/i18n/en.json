@@ -1,0 +1,9 @@
+   "subscriptions": {
+     "title": "Plans and subscriptions",
+     "subtitle": "Choose a plan based on how many devices you need to manage.",
+     "deviceLimit": "Up to {{ count }} devices",
+     "currentPlan": "Current plan",
+     "choosePlan": "Choose plan",
+     "personalTitle": "Personal Plans",
+     "businessTitle": "Business Plans"
+   },

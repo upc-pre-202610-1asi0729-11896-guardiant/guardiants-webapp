@@ -1,0 +1,220 @@
+.devices-page {
+  padding: 28px 26px;
+  display: grid;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-heading h1 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+  color: #111;
+}
+
+.page-heading p {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.device-form {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: 16px;
+  align-items: end;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.device-form:hover {
+  border-color: #111;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.device-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #333;
+  letter-spacing: 0.5px;
+}
+
+.device-form input,
+.device-form select {
+  min-height: 42px;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 6px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+.device-form input:focus,
+.device-form select:focus {
+  outline: none;
+  border-color: #111;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.1);
+}
+
+.device-form input::placeholder {
+  color: #999;
+}
+
+.device-form button {
+  min-height: 42px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #111 0%, #222 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.device-form button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.device-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.device-list {
+  display: grid;
+  gap: 14px;
+}
+
+.device-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 2px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 18px 20px;
+  background: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.device-card:hover {
+  border-color: #111;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateX(4px);
+}
+
+.device-card div {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+
+.device-card strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+.device-card span {
+  color: #666;
+  font-size: 13px;
+}
+
+.status-pill {
+  border-radius: 20px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #127333;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(18, 115, 51, 0.15);
+}
+
+.status-pill.IDLE {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  color: #e65100;
+}
+
+.status-pill.DISCONNECTED {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  color: #b71c1c;
+}
+
+.limit-banner,
+.error-banner,
+.success-banner {
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  border-left: 4px solid;
+  animation: slideIn 0.3s ease-out;
+}
+
+.limit-banner {
+  background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%);
+  color: #8a5a00;
+  border-left-color: #ff9800;
+}
+
+.error-banner {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  color: #b00020;
+  border-left-color: #f44336;
+}
+
+.success-banner {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #127333;
+  border-left-color: #4caf50;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .device-form {
+    grid-template-columns: 1fr;
+  }
+
+  .device-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .device-card div {
+    width: 100%;
+  }
+
+  .status-pill {
+    align-self: flex-start;
+  }
+}
+
+

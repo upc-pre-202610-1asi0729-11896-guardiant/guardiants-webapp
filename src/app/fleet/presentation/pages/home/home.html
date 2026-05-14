@@ -35,11 +35,11 @@
         <span>🔓</span>
         <span>{{ 'home.unblockVehicle' | translate }}</span>
       </button>
-      <button type="button" class="ghost-button" (click)="$event.stopPropagation(); toggleAddVehicle()">
+      <button type="button" class="ghost-button" (click)="$event.stopPropagation(); toggleAddVehicle()" [disabled]="!canAddVehicle()">
         <span>+</span>
         <span>{{ 'home.addVehicle' | translate }}</span>
       </button>
-      <button type="button" class="ghost-button">{{ 'home.viewOnMap' | translate }}</button>
+      <button type="button" class="ghost-button" (click)="openFullMap()">{{ 'home.viewOnMap' | translate }}</button>
     </div>
 
     <div class="block-menu" *ngIf="isBlockMenuOpen()" (click)="$event.stopPropagation()">
@@ -48,7 +48,7 @@
         <button type="button" class="close-btn" (click)="toggleBlockMenu()">x</button>
       </div>
       <div class="block-menu-content">
-        <div *ngFor="let vehicle of vehicles()" class="vehicle-option" [class.blocked]="vehicle.status === 'BLOCKED'">
+        <div *ngFor="let vehicle of filteredVehicles()" class="vehicle-option" [class.blocked]="vehicle.status === 'BLOCKED'">
           <div class="vehicle-info">
             <span class="vehicle-plate">{{ vehicle.plate }}</span>
             <span class="vehicle-model">{{ vehicle.brand }} {{ vehicle.model }}</span>
@@ -69,7 +69,7 @@
         <button type="button" class="close-btn" (click)="toggleUnblockMenu()">x</button>
       </div>
       <div class="block-menu-content">
-        <div *ngFor="let vehicle of vehicles()" class="vehicle-option" [class.blocked]="vehicle.status === 'BLOCKED'">
+        <div *ngFor="let vehicle of filteredVehicles()" class="vehicle-option" [class.blocked]="vehicle.status === 'BLOCKED'">
           <div class="vehicle-info">
             <span class="vehicle-plate">{{ vehicle.plate }}</span>
             <span class="vehicle-model">{{ vehicle.brand }} {{ vehicle.model }}</span>
@@ -129,6 +129,10 @@
     </form>
   </section>
 
+  <div class="limit-banner" *ngIf="!canAddVehicle()">
+    {{ 'home.vehicleLimitReached' | translate }}
+  </div>
+
   <ng-template #emptyState>
     <section class="summary-card empty-summary">
       <p>{{ 'home.noVehicles' | translate }}</p>
@@ -166,7 +170,19 @@
     </article>
   </section>
 
-  <app-vehicle-map [vehicles]="vehicles()" [selectedVehicle]="activeVehicle()" height="280px"></app-vehicle-map>
+  <section class="static-map-preview">
+    <app-vehicle-map [vehicles]="filteredVehicles()" [selectedVehicle]="activeVehicle()" height="220px"></app-vehicle-map>
+  </section>
+
+  <div class="modal-backdrop" *ngIf="isFullMapOpen()" (click)="closeFullMap()">
+    <section class="full-map-modal" (click)="$event.stopPropagation()">
+      <div class="full-map-header">
+        <h2>{{ 'home.fleetMap' | translate }}</h2>
+        <button type="button" class="close-btn" (click)="closeFullMap()">x</button>
+      </div>
+      <app-vehicle-map [vehicles]="filteredVehicles()" [selectedVehicle]="activeVehicle()" height="70vh"></app-vehicle-map>
+    </section>
+  </div>
 
   <div class="loading-banner" *ngIf="isLoading()">{{ 'common.loadingVehicles' | translate }}</div>
   <div class="error-banner" *ngIf="error() && !isLoading()">{{ error() }}</div>

@@ -70,6 +70,9 @@ export class IamStore {
 
   readonly isAuthenticated = computed(() => !!this._state().token && !!this._state().user);
   readonly isEmpresa = computed(() => this._state().user?.role === 'EMPRESA');
+  readonly userRole = computed(() => this._state().user?.role ?? 'PERSONA_NATURAL');
+  readonly userRoleId = computed(() => this._state().user?.roleId ?? 1);
+  readonly organizationId = computed(() => this._state().user?.organizationId ?? 'ORG-001');
   readonly userName = computed(() => this._state().user?.name ?? '');
   readonly userPlan = computed(() => this._state().user?.plan ?? 'BASIC');
   readonly dashboardRoute = computed(() => this._state().user?.dashboardRoute ?? '/home');

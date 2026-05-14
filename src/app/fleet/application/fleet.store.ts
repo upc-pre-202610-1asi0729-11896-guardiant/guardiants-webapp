@@ -117,6 +117,21 @@ export class FleetStore {
     return this.updateVehicle(vehicleId, { status });
   }
 
+  deleteVehicle(vehicleId: string): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/vehicles/${vehicleId}`).pipe(
+      tap(() => {
+        this._patch({
+          vehicles: this._state().vehicles.filter((vehicle) => vehicle.id !== vehicleId),
+        });
+      }),
+      catchError((err) => {
+        const errorMsg = err?.message ?? 'Error al eliminar vehiculo.';
+        this._patch({ error: errorMsg });
+        return throwError(() => err);
+      }),
+    );
+  }
+
   private _patch(partial: Partial<FleetState>): void {
     this._state.update((s) => ({ ...s, ...partial }));
   }

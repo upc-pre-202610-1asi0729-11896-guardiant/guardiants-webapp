@@ -35,6 +35,7 @@
           <div class="alert-type-row">
             <span class="alert-icon">{{ alert.typeIcon }}</span>
             <span class="alert-title">{{ alert.typeLabel }}</span>
+            <span class="severity-pill" [class.severity-pill--high]="alert.isHighPriority">{{ alert.severity }}</span>
           </div>
           <div class="alert-location">
             <span class="loc-icon">⌖</span>
@@ -44,9 +45,12 @@
             <span class="detail-dot" [class.dot-red]="alert.isHighPriority"></span>
             <span>{{ alert.detail }}</span>
           </div>
+          <div class="vehicle-inline" *ngIf="vehicleById(alert.vehicleId) as vehicle">
+            {{ vehicle.plate }} · {{ vehicle.brand }} {{ vehicle.model }} · {{ ('fleet.status.' + vehicle.status) | translate }}
+          </div>
         </div>
         <div class="alert-card-actions">
-          <button type="button" class="btn-view" (click)="viewDetail(alert.id)">
+          <button type="button" class="btn-view" (click)="openDetail(alert)">
             {{ 'alerts.viewDetail' | translate }} >
           </button>
           <button type="button" class="btn-block" (click)="blockVehicle(alert.vehicleId)">
@@ -56,7 +60,7 @@
       </article>
     </div>
 
-    <div class="map-placeholder" aria-label="map placeholder"></div>
+    <app-vehicle-map [vehicles]="vehicles()" [selectedVehicle]="selectedVehicle()" height="220px"></app-vehicle-map>
   </div>
 
   <aside class="alert-sidebar">
@@ -68,23 +72,23 @@
             <span class="recent-desc">{{ ra.typeLabel }}</span>
             <span class="recent-time">{{ timeAgo(ra.createdAt) }}</span>
           </div>
-          <button type="button" class="btn-view-sm" (click)="viewDetail(ra.id)">{{ 'common.view' | translate }}</button>
+          <button type="button" class="btn-view-sm" (click)="openDetail(ra)">{{ 'common.view' | translate }}</button>
         </div>
       </div>
     </section>
 
     <section class="quick-actions-panel">
-      <button type="button" class="quick-action">
+      <button type="button" class="quick-action" [disabled]="!selectedAlert()" (click)="selectedAlert() && blockVehicle(selectedAlert()!.vehicleId)">
         <span class="qa-icon">🔒</span>
         <span>{{ 'alerts.block' | translate }}</span>
       </button>
-      <button type="button" class="quick-action">
-        <span class="qa-icon">!</span>
-        <span>{{ 'alerts.robberyReport' | translate }}</span>
+      <button type="button" class="quick-action" [disabled]="!selectedAlert()" (click)="selectedAlert() && unblockVehicle(selectedAlert()!.vehicleId)">
+        <span class="qa-icon">🔓</span>
+        <span>{{ 'alerts.unblock' | translate }}</span>
       </button>
-      <button type="button" class="quick-action">
-        <span class="qa-icon">⌖</span>
-        <span>{{ 'alerts.shareLocation' | translate }}</span>
+      <button type="button" class="quick-action" [disabled]="!selectedAlert()" (click)="resolveSelectedAlert()">
+        <span class="qa-icon">✓</span>
+        <span>{{ 'alerts.resolve' | translate }}</span>
       </button>
     </section>
 
@@ -100,4 +104,57 @@
       </div>
     </section>
   </aside>
+
+  <div class="modal-backdrop" *ngIf="isDetailOpen()" (click)="closeDetail()">
+    <section class="alert-detail-modal" *ngIf="selectedAlert() as alert" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>{{ alert.typeLabel }}</h2>
+          <p>{{ alert.description }}</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeDetail()">x</button>
+      </div>
+
+      <div class="detail-grid">
+        <article>
+          <span>{{ 'alerts.severity' | translate }}</span>
+          <strong>{{ alert.severity }}</strong>
+        </article>
+        <article>
+          <span>Status</span>
+          <strong>{{ alert.status }}</strong>
+        </article>
+        <article>
+          <span>{{ 'common.location' | translate }}</span>
+          <strong>{{ alert.location }}</strong>
+        </article>
+        <article>
+          <span>{{ 'common.lastUpdate' | translate }}</span>
+          <strong>{{ timeAgo(alert.createdAt) }}</strong>
+        </article>
+      </div>
+
+      <section class="vehicle-detail" *ngIf="selectedVehicle() as vehicle">
+        <div>
+          <h3>{{ vehicle.plate }}</h3>
+          <p>{{ vehicle.brand }} {{ vehicle.model }} · {{ vehicle.lastLocation ?? ('common.noLocation' | translate) }}</p>
+        </div>
+        <div class="detail-grid detail-grid--compact">
+          <article><span>{{ 'common.speed' | translate }}</span><strong>{{ vehicle.speedKmh ?? 0 }} km/h</strong></article>
+          <article><span>{{ 'common.battery' | translate }}</span><strong>{{ vehicle.batteryPct ?? 0 }}%</strong></article>
+          <article><span>{{ 'common.gps' | translate }}</span><strong>{{ vehicle.lastLat ?? '--' }}, {{ vehicle.lastLng ?? '--' }}</strong></article>
+          <article><span>Status</span><strong>{{ ('fleet.status.' + vehicle.status) | translate }}</strong></article>
+        </div>
+        <app-vehicle-map [vehicles]="[vehicle]" [selectedVehicle]="vehicle" height="260px"></app-vehicle-map>
+      </section>
+
+      <p class="alert-long-detail">{{ alert.detail }}</p>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-block" (click)="blockVehicle(alert.vehicleId)" [disabled]="isActionLoading()">{{ 'alerts.blockVehicle' | translate }}</button>
+        <button type="button" class="btn-view" (click)="unblockVehicle(alert.vehicleId)" [disabled]="isActionLoading()">{{ 'alerts.unblockVehicle' | translate }}</button>
+        <button type="button" class="btn-resolve" (click)="resolveSelectedAlert()" [disabled]="isActionLoading()">{{ 'alerts.resolve' | translate }}</button>
+      </div>
+    </section>
+  </div>
 </section>

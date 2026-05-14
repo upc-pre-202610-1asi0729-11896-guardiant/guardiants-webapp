@@ -1,7 +1,10 @@
 <div class="dashboard-shell">
   <aside class="sidebar">
     <div class="brand-block">
-      <div class="brand-logo"><span>◎</span></div>
+      <div class="brand-logo">
+        <img src="assets/brand/logo.png" alt="Brand Logo" />
+        <span>◎</span>
+      </div>
       <div class="brand-copy"><strong>{{ 'app.brand' | translate }}</strong></div>
     </div>
 
@@ -14,18 +17,34 @@
         <span class="sidebar-icon">⌖</span>
         <span class="sidebar-label">{{ 'nav.liveStatus' | translate }}</span>
       </a>
-      <a class="sidebar-item" routerLink="/security-alert" routerLinkActive="is-active">
-        <span class="sidebar-icon">!</span>
-        <span class="sidebar-label">{{ 'nav.securityAlert' | translate }}</span>
-      </a>
-      <button type="button" class="sidebar-item sidebar-item--disabled" disabled>
-        <span class="sidebar-icon">⌁</span>
-        <span class="sidebar-label">{{ 'nav.routesHistory' | translate }}</span>
-      </button>
-      <button type="button" class="sidebar-item sidebar-item--disabled" disabled>
-        <span class="sidebar-icon">⚙</span>
-        <span class="sidebar-label">{{ 'nav.configuration' | translate }}</span>
-      </button>
+
+      <!-- Solo para personas naturales (roleId = 1) -->
+      <ng-container *ngIf="userRoleId() === 1">
+        <a class="sidebar-item" routerLink="/security-alert" routerLinkActive="is-active">
+          <span class="sidebar-icon">!</span>
+          <span class="sidebar-label">{{ 'nav.securityAlert' | translate }}</span>
+        </a>
+        <a class="sidebar-item" routerLink="/devices" routerLinkActive="is-active">
+          <span class="sidebar-icon">▣</span>
+          <span class="sidebar-label">{{ 'nav.devices' | translate }}</span>
+        </a>
+        <a class="sidebar-item" routerLink="/profile" routerLinkActive="is-active">
+          <span class="sidebar-icon">👤</span>
+          <span class="sidebar-label">{{ 'nav.profile' | translate }}</span>
+        </a>
+      </ng-container>
+
+      <!-- Solo para empresas (roleId = 2) -->
+      <ng-container *ngIf="userRoleId() === 2">
+        <a class="sidebar-item" routerLink="/operational-reports" routerLinkActive="is-active">
+          <span class="sidebar-icon">📊</span>
+          <span class="sidebar-label">{{ 'nav.operationalReports' | translate }}</span>
+        </a>
+        <a class="sidebar-item" routerLink="/subscriptions" routerLinkActive="is-active">
+          <span class="sidebar-icon">$</span>
+          <span class="sidebar-label">{{ 'nav.subscriptions' | translate }}</span>
+        </a>
+      </ng-container>
     </nav>
 
     <button type="button" class="logout-button" (click)="logout()">
@@ -34,14 +53,9 @@
     </button>
   </aside>
 
-  <main class="dashboard-main">
-    <header class="topbar">
-      <label class="search-box">
-        <span class="search-icon">⌕</span>
-        <input type="text" [placeholder]="'app.searchVehicle' | translate" />
-      </label>
-
-      <div class="topbar-actions">
+   <main class="dashboard-main">
+     <header class="topbar">
+       <div class="topbar-actions">
         <button type="button" class="icon-button" [attr.aria-label]="'app.notifications' | translate">!</button>
         <a class="icon-button profile-button" routerLink="/profile" [attr.aria-label]="'app.profile' | translate">👤</a>
         <app-language-switcher></app-language-switcher>
