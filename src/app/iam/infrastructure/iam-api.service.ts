@@ -1,10 +1,10 @@
-// src/app/iam/infrastructure/iam-api.service.ts
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { delay, map, tap } from 'rxjs/operators';
-import { UserEntity, UserRole, UserPlan } from '../domain/model/user.entity';
+import { Observable, map, switchMap, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { UserEntity, UserRole } from '../domain/model/user.entity';
+import { UserAssembler } from './user-assembler';
+import { UserResource } from './user-response';
 
 export interface LoginRequest {
   email: string;
@@ -37,126 +37,102 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-// ─── Mock data for simulation ────────────────────────────────────────────────
-const MOCK_USERS: Record<string, { password: string; user: Record<string, unknown> }> = {
-  'empresa@godstrack.com': {
-    password: 'Demo1234!',
-    user: {
-      id: 'usr_001',
-      name: 'Transportes Lima S.A.C.',
-      email: 'empresa@godstrack.com',
-      role: 'EMPRESA' as UserRole,
-      plan: 'PRO' as UserPlan,
-      companyName: 'Transportes Lima S.A.C.',
-      ruc: '20512345678',
-      phone: '+51 999 888 777',
-      createdAt: new Date().toISOString(),
-    },
-  },
-  'enrique@godstrack.com': {
-    password: 'Demo1234!',
-    user: {
-      id: 'usr_002',
-      name: 'Enrique Castillo',
-      email: 'enrique@godstrack.com',
-      role: 'PERSONA_NATURAL' as UserRole,
-      plan: 'BASIC' as UserPlan,
-      phone: '+51 911 222 333',
-      createdAt: new Date().toISOString(),
-    },
-  },
-};
-
-// ─── Service ─────────────────────────────────────────────────────────────────
 @Injectable({ providedIn: 'root' })
 export class IamApiService {
-  // Swap this for your real API base URL
-  private readonly baseUrl = 'https://api.godstracker.io/v1';
-
-  // Injecting HttpClient for when the real API is ready
   private readonly http = inject(HttpClient);
+  private readonly assembler = new UserAssembler();
+  private readonly baseUrl = environment.apiBaseUrl;
 
-  /**
-   * Simulates a login request.
-   * Replace the body with: return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, payload)
-   */
   login(payload: LoginRequest): Observable<AuthResponse> {
-    const record = MOCK_USERS[payload.email.toLowerCase()];
-
-    if (!record || record.password !== payload.password) {
-      return throwError(() => ({
-        status: 401,
-        message: 'Credenciales inválidas. Verifica tu email y contraseña.',
-      })).pipe(delay(800));
-    }
-
-    const user = UserEntity.fromJson(record.user);
-    const token = `mock_jwt_${btoa(user.email)}_${Date.now()}`;
-
-    return of({ token, user }).pipe(delay(900));
+    return this.http
+      .get<UserResource[]>(`${this.baseUrl}/users`, {
+        params: { email: payload.email.toLowerCase() },
+      })
+      .pipe(
+        map((users) => {
+          const record = users[0];
+          if (!record || record.passwordHash !== payload.password || record.status !== 'ACTIVE') {
+            throw { status: 401, message: 'Credenciales invalidas. Verifica tu email y contrasena.' };
+          }
+          const user = this.assembler.toEntityFromResource(record);
+          return { token: this.createToken(user), user };
+        }),
+      );
   }
 
-  /**
-   * Simulates a register request.
-   * Replace with: return this.http.post<AuthResponse>(`${this.baseUrl}/auth/register`, payload)
-   */
   register(payload: RegisterRequest): Observable<AuthResponse> {
-    if (MOCK_USERS[payload.email.toLowerCase()]) {
-      return throwError(() => ({
-        status: 409,
-        message: 'Este email ya está registrado. Intenta iniciar sesión.',
-      })).pipe(delay(800));
-    }
+    return this.http
+      .get<UserResource[]>(`${this.baseUrl}/users`, {
+        params: { email: payload.email.toLowerCase() },
+      })
+      .pipe(
+        switchMap((users) => {
+          if (users.length > 0) {
+            return throwError(() => ({
+              status: 409,
+              message: 'Este email ya esta registrado. Intenta iniciar sesion.',
+            }));
+          }
 
-    const newUser = new UserEntity(
-      `usr_${Date.now()}`,
-      payload.name,
-      payload.email,
-      payload.role,
-      'BASIC',
-      payload.companyName,
-      payload.ruc,
-      payload.phone,
-      new Date(),
-    );
+          const [firstName, ...lastNameParts] = payload.name.trim().split(/\s+/);
+          const user = new UserEntity({
+            id: `USR-${Date.now()}`,
+            organizationId: 'ORG-001',
+            roleId: payload.role === 'EMPRESA' ? 2 : 1,
+            firstName: firstName ?? payload.name,
+            lastName: lastNameParts.join(' '),
+            email: payload.email.toLowerCase(),
+            passwordHash: payload.password,
+            status: 'ACTIVE',
+            createdAt: new Date(),
+            role: payload.role,
+            plan: 'BASIC',
+            companyName: payload.companyName,
+            ruc: payload.ruc,
+            phone: payload.phone,
+          });
 
-    const token = `mock_jwt_${btoa(newUser.email)}_${Date.now()}`;
-    return of({ token, user: newUser }).pipe(delay(1000));
+          return this.http.post<UserResource>(`${this.baseUrl}/users`, this.assembler.toResourceFromEntity(user));
+        }),
+        map((resource) => {
+          const user = this.assembler.toEntityFromResource(resource);
+          return { token: this.createToken(user), user };
+        }),
+      );
   }
 
-  /**
-   * Updates the user profile.
-   * Replace with: return this.http.patch<UserEntity>(`${this.baseUrl}/users/me`, payload, { headers: this.authHeaders(token) })
-   */
-  updateProfile(
-    userId: string,
-    payload: UpdateProfileRequest,
-    token: string,
-  ): Observable<UserEntity> {
-    void token; // used by real implementation
-    const existingRecord = Object.values(MOCK_USERS).find(
-      (r) => (r.user['id'] as string) === userId,
-    );
-    if (!existingRecord) {
-      return throwError(() => ({ status: 404, message: 'Usuario no encontrado.' }));
-    }
-    const updated = UserEntity.fromJson({ ...existingRecord.user, ...payload });
-    return of(updated).pipe(delay(700));
+  updateProfile(userId: string, payload: UpdateProfileRequest, token: string): Observable<UserEntity> {
+    const [firstName, ...lastNameParts] = payload.name.trim().split(/\s+/);
+    return this.http
+      .patch<UserResource>(
+        `${this.baseUrl}/users/${userId}`,
+        {
+          firstName: firstName ?? payload.name,
+          lastName: lastNameParts.join(' '),
+          email: payload.email.toLowerCase(),
+          phone: payload.phone,
+        },
+        { headers: this.authHeaders(token) },
+      )
+      .pipe(map((resource) => this.assembler.toEntityFromResource(resource)));
   }
 
-  /**
-   * Changes the password.
-   * Replace with: return this.http.post(`${this.baseUrl}/auth/change-password`, payload, { headers: this.authHeaders(token) })
-   */
   changePassword(payload: ChangePasswordRequest, token: string): Observable<void> {
     void token;
     if (payload.currentPassword === payload.newPassword) {
       return throwError(() => ({
         status: 400,
-        message: 'La nueva contraseña debe ser diferente a la actual.',
+        message: 'La nueva contrasena debe ser diferente a la actual.',
       }));
     }
-    return of(undefined).pipe(delay(700));
+    return new Observable<void>((subscriber) => {
+      subscriber.next();
+      subscriber.complete();
+    });
+  }
+
+  private createToken(user: UserEntity): string {
+    return `mock_jwt_${btoa(user.email)}_${Date.now()}`;
   }
 
   private authHeaders(token: string): HttpHeaders {

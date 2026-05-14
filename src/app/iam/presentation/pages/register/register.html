@@ -1,58 +1,53 @@
-<!-- src/app/iam/presentation/pages/register/register.html -->
 <div class="auth-shell">
-
-  <!-- Left panel -->
   <aside class="auth-brand">
     <div class="brand-content">
       <div class="brand-logo">
-        <span class="logo-icon">👁</span>
-        <span class="logo-text">God's Tracker</span>
+        <span class="logo-icon">◉</span>
+        <span class="logo-text">{{ 'app.brand' | translate }}</span>
       </div>
       <h1 class="brand-tagline">
-        Únete a la red de<br>
-        <span class="brand-accent">seguridad inteligente.</span>
+        {{ 'auth.registerTaglineLine1' | translate }}<br>
+        <span class="brand-accent">{{ 'auth.registerTaglineAccent' | translate }}</span>
       </h1>
-      <p class="brand-sub">
-        Elige tu perfil y empieza a proteger lo que más importa.
-      </p>
+      <p class="brand-sub">{{ 'auth.registerSubtitle' | translate }}</p>
 
       <div class="feature-list">
         <div class="feature">
           <mat-icon>gps_fixed</mat-icon>
-          <span>Rastreo GPS en tiempo real</span>
+          <span>{{ 'auth.featureGps' | translate }}</span>
         </div>
         <div class="feature">
           <mat-icon>notifications_active</mat-icon>
-          <span>Alertas de seguridad instantáneas</span>
+          <span>{{ 'auth.featureAlerts' | translate }}</span>
         </div>
         <div class="feature">
           <mat-icon>lock</mat-icon>
-          <span>Bloqueo remoto del vehículo</span>
+          <span>{{ 'auth.featureLock' | translate }}</span>
         </div>
         <div class="feature">
           <mat-icon>analytics</mat-icon>
-          <span>Reportes y analítica avanzada</span>
+          <span>{{ 'auth.featureReports' | translate }}</span>
         </div>
       </div>
     </div>
   </aside>
 
-  <!-- Right panel -->
   <main class="auth-form-panel">
     <div class="form-wrapper">
+      <div class="auth-language">
+        <app-language-switcher></app-language-switcher>
+      </div>
 
-      <!-- Mobile logo -->
       <div class="mobile-logo">
-        <span class="logo-icon">👁</span>
-        <span class="logo-text">God's Tracker</span>
+        <span class="logo-icon">◉</span>
+        <span class="logo-text">{{ 'app.brand' | translate }}</span>
       </div>
 
       <div class="form-header">
-        <h2>Crear cuenta</h2>
-        <p>Rellena el formulario para comenzar gratis.</p>
+        <h2>{{ 'auth.createAccount' | translate }}</h2>
+        <p>{{ 'auth.registerHelp' | translate }}</p>
       </div>
 
-      <!-- Error banner -->
       @if (store.error()) {
         <div class="error-banner" role="alert">
           <mat-icon>error_outline</mat-icon>
@@ -60,183 +55,144 @@
         </div>
       }
 
-      <!-- ── Step 1: Role selection ── -->
       <section class="role-step">
-        <p class="step-label">1. ¿Cómo usarás God's Tracker?</p>
+        <p class="step-label">{{ 'auth.roleStep' | translate }}</p>
         <div class="role-cards">
-
-          <button
-            type="button"
-            class="role-card"
-            [class.active]="selectedRole() === 'PERSONA_NATURAL'"
-            (click)="selectRole('PERSONA_NATURAL')"
-          >
+          <button type="button" class="role-card" [class.active]="selectedRole() === 'PERSONA_NATURAL'" (click)="selectRole('PERSONA_NATURAL')">
             <div class="role-card-icon">🚗</div>
             <div class="role-card-body">
-              <span class="role-card-title">Persona Natural</span>
-              <span class="role-card-desc">Protege tu vehículo personal con alertas y GPS en vivo.</span>
+              <span class="role-card-title">{{ 'auth.rolePerson' | translate }}</span>
+              <span class="role-card-desc">{{ 'auth.rolePersonDesc' | translate }}</span>
             </div>
             @if (selectedRole() === 'PERSONA_NATURAL') {
               <mat-icon class="role-check">check_circle</mat-icon>
             }
           </button>
 
-          <button
-            type="button"
-            class="role-card"
-            [class.active]="selectedRole() === 'EMPRESA'"
-            (click)="selectRole('EMPRESA')"
-          >
-            <div class="role-card-icon">🏢</div>
+          <button type="button" class="role-card" [class.active]="selectedRole() === 'EMPRESA'" (click)="selectRole('EMPRESA')">
+            <div class="role-card-icon">▦</div>
             <div class="role-card-body">
-              <span class="role-card-title">Empresa</span>
-              <span class="role-card-desc">Gestiona flotas, conductores y reportes operacionales.</span>
+              <span class="role-card-title">{{ 'auth.roleCompany' | translate }}</span>
+              <span class="role-card-desc">{{ 'auth.roleCompanyDesc' | translate }}</span>
             </div>
             @if (selectedRole() === 'EMPRESA') {
               <mat-icon class="role-check">check_circle</mat-icon>
             }
           </button>
-
         </div>
       </section>
 
-      <!-- ── Step 2: Form ── -->
       <form [formGroup]="stepTwoForm" (ngSubmit)="onSubmit()" novalidate class="register-form">
-        <p class="step-label">2. Tus datos</p>
+        <p class="step-label">{{ 'auth.dataStep' | translate }}</p>
 
-        <!-- Full name -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Nombre completo</mat-label>
+          <mat-label>{{ 'common.fullName' | translate }}</mat-label>
           <mat-icon matPrefix>person_outline</mat-icon>
-          <input matInput formControlName="name" placeholder="Ej. Enrique Castillo" autocomplete="name" />
+          <input matInput formControlName="name" [placeholder]="'auth.namePlaceholder' | translate" autocomplete="name" />
           @if (nameCtrl.hasError('required') && nameCtrl.touched) {
-            <mat-error>El nombre es obligatorio.</mat-error>
+            <mat-error>{{ 'validation.nameRequired' | translate }}</mat-error>
           }
           @if (nameCtrl.hasError('minlength') && nameCtrl.touched) {
-            <mat-error>Mínimo 3 caracteres.</mat-error>
+            <mat-error>{{ 'validation.nameMin' | translate }}</mat-error>
           }
         </mat-form-field>
 
-        <!-- Company fields (conditional) -->
         @if (isEmpresa()) {
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Razón social</mat-label>
+            <mat-label>{{ 'auth.companyName' | translate }}</mat-label>
             <mat-icon matPrefix>business</mat-icon>
-            <input matInput formControlName="companyName" placeholder="Ej. Transportes Lima S.A.C." />
+            <input matInput formControlName="companyName" [placeholder]="'auth.companyPlaceholder' | translate" />
             @if (companyCtrl.hasError('required') && companyCtrl.touched) {
-              <mat-error>La razón social es obligatoria.</mat-error>
+              <mat-error>{{ 'auth.companyRequired' | translate }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>RUC (11 dígitos)</mat-label>
+            <mat-label>{{ 'auth.ruc' | translate }}</mat-label>
             <mat-icon matPrefix>badge</mat-icon>
             <input matInput formControlName="ruc" placeholder="20512345678" maxlength="11" />
             @if (rucCtrl.hasError('required') && rucCtrl.touched) {
-              <mat-error>El RUC es obligatorio.</mat-error>
+              <mat-error>{{ 'auth.rucRequired' | translate }}</mat-error>
             }
             @if (rucCtrl.hasError('pattern') && rucCtrl.touched) {
-              <mat-error>El RUC debe tener exactamente 11 dígitos.</mat-error>
+              <mat-error>{{ 'auth.rucInvalid' | translate }}</mat-error>
             }
           </mat-form-field>
         }
 
-        <!-- Phone -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Teléfono (opcional)</mat-label>
+          <mat-label>{{ 'common.phoneOptional' | translate }}</mat-label>
           <mat-icon matPrefix>phone_outline</mat-icon>
           <input matInput formControlName="phone" placeholder="+51 999 888 777" autocomplete="tel" />
           @if (phoneCtrl.hasError('pattern') && phoneCtrl.touched) {
-            <mat-error>Formato de teléfono inválido.</mat-error>
+            <mat-error>{{ 'validation.phoneInvalid' | translate }}</mat-error>
           }
         </mat-form-field>
 
-        <!-- Email -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Correo electrónico</mat-label>
+          <mat-label>{{ 'common.email' | translate }}</mat-label>
           <mat-icon matPrefix>mail_outline</mat-icon>
-          <input matInput type="email" formControlName="email" placeholder="tu@correo.com" autocomplete="email" />
+          <input matInput type="email" formControlName="email" [placeholder]="'auth.emailPlaceholder' | translate" autocomplete="email" />
           @if (emailCtrl.hasError('required') && emailCtrl.touched) {
-            <mat-error>El email es obligatorio.</mat-error>
+            <mat-error>{{ 'validation.emailRequired' | translate }}</mat-error>
           }
           @if (emailCtrl.hasError('email') && emailCtrl.touched) {
-            <mat-error>Email inválido.</mat-error>
+            <mat-error>{{ 'validation.emailInvalid' | translate }}</mat-error>
           }
         </mat-form-field>
 
-        <!-- Password -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Contraseña</mat-label>
+          <mat-label>{{ 'common.password' | translate }}</mat-label>
           <mat-icon matPrefix>lock_outline</mat-icon>
-          <input
-            matInput
-            [type]="showPass() ? 'text' : 'password'"
-            formControlName="password"
-            placeholder="Mín. 8 chars, mayús, número y símbolo"
-            autocomplete="new-password"
-          />
+          <input matInput [type]="showPass() ? 'text' : 'password'" formControlName="password" [placeholder]="'auth.passwordStrongPlaceholder' | translate" autocomplete="new-password" />
           <button mat-icon-button matSuffix type="button" (click)="togglePass()">
             <mat-icon>{{ showPass() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           @if (passCtrl.hasError('required') && passCtrl.touched) {
-            <mat-error>La contraseña es obligatoria.</mat-error>
+            <mat-error>{{ 'validation.passwordRequired' | translate }}</mat-error>
           }
           @if (passCtrl.hasError('minlength') && passCtrl.touched) {
-            <mat-error>Mínimo 8 caracteres.</mat-error>
+            <mat-error>{{ 'validation.passwordMin' | translate }}</mat-error>
           }
           @if (passCtrl.hasError('weakPassword') && passCtrl.touched) {
-            <mat-error>Debe incluir mayúscula, minúscula, número y símbolo.</mat-error>
+            <mat-error>{{ 'validation.strongPassword' | translate }}</mat-error>
           }
         </mat-form-field>
 
-        <!-- Confirm password -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Confirmar contraseña</mat-label>
+          <mat-label>{{ 'auth.confirmPassword' | translate }}</mat-label>
           <mat-icon matPrefix>lock_reset</mat-icon>
-          <input
-            matInput
-            [type]="showConfirm() ? 'text' : 'password'"
-            formControlName="confirmPassword"
-            placeholder="Repite tu contraseña"
-            autocomplete="new-password"
-          />
+          <input matInput [type]="showConfirm() ? 'text' : 'password'" formControlName="confirmPassword" [placeholder]="'auth.confirmPlaceholder' | translate" autocomplete="new-password" />
           <button mat-icon-button matSuffix type="button" (click)="toggleConfirm()">
             <mat-icon>{{ showConfirm() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           @if (confirmCtrl.hasError('required') && confirmCtrl.touched) {
-            <mat-error>Confirma tu contraseña.</mat-error>
+            <mat-error>{{ 'auth.confirmRequired' | translate }}</mat-error>
           }
           @if (stepTwoForm.hasError('passwordsMismatch') && confirmCtrl.touched) {
-            <mat-error>Las contraseñas no coinciden.</mat-error>
+            <mat-error>{{ 'auth.passwordMismatch' | translate }}</mat-error>
           }
         </mat-form-field>
 
-        <!-- Submit -->
-        <button
-          mat-flat-button
-          type="submit"
-          class="submit-btn full-width"
-          [disabled]="store.isLoading()"
-        >
+        <button mat-flat-button type="submit" class="submit-btn full-width" [disabled]="store.isLoading()">
+          @if (!store.isLoading()) {
+            <mat-icon>how_to_reg</mat-icon>
+          }
           @if (store.isLoading()) {
             <mat-progress-spinner diameter="20" mode="indeterminate" />
-            Creando cuenta…
+            {{ 'auth.creatingAccount' | translate }}
           } @else {
-            <mat-icon>how_to_reg</mat-icon>
-            Crear Cuenta Gratis
+            {{ 'auth.createFreeAccount' | translate }}
           }
         </button>
-
       </form>
 
       <mat-divider />
 
       <p class="login-cta">
-        ¿Ya tienes cuenta?
-        <a routerLink="/login" class="login-link">Iniciar sesión</a>
+        {{ 'auth.haveAccount' | translate }}
+        <a routerLink="/login" class="login-link">{{ 'auth.signIn' | translate }}</a>
       </p>
-
     </div>
   </main>
-
 </div>

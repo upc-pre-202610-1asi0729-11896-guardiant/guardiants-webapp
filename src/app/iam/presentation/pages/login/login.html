@@ -1,64 +1,58 @@
-<!-- src/app/iam/presentation/pages/login/login.html -->
 <div class="auth-shell">
-
-  <!-- Left panel: branding -->
   <aside class="auth-brand">
     <div class="brand-content">
       <div class="brand-logo">
-        <span class="logo-icon">👁</span>
-        <span class="logo-text">God's Tracker</span>
+        <span class="logo-icon">◉</span>
+        <span class="logo-text">{{ 'app.brand' | translate }}</span>
       </div>
       <h1 class="brand-tagline">
-        Seguridad vehicular<br>
-        <span class="brand-accent">en tiempo real.</span>
+        {{ 'auth.taglineLine1' | translate }}<br>
+        <span class="brand-accent">{{ 'auth.taglineAccent' | translate }}</span>
       </h1>
-      <p class="brand-sub">
-        Monitorea, protege y gestiona tu flota desde cualquier lugar.
-      </p>
+      <p class="brand-sub">{{ 'auth.subtitle' | translate }}</p>
 
       <div class="brand-stats">
         <div class="stat">
           <span class="stat-value">99.9%</span>
-          <span class="stat-label">Uptime</span>
+          <span class="stat-label">{{ 'auth.uptime' | translate }}</span>
         </div>
         <div class="stat">
           <span class="stat-value">&lt;3s</span>
-          <span class="stat-label">Tiempo de alerta</span>
+          <span class="stat-label">{{ 'auth.alertTime' | translate }}</span>
         </div>
         <div class="stat">
           <span class="stat-value">24/7</span>
-          <span class="stat-label">Monitoreo</span>
+          <span class="stat-label">{{ 'auth.monitoring' | translate }}</span>
         </div>
       </div>
     </div>
   </aside>
 
-  <!-- Right panel: form -->
   <main class="auth-form-panel">
     <div class="form-wrapper">
+      <div class="auth-language">
+        <app-language-switcher></app-language-switcher>
+      </div>
 
-      <!-- Mobile logo -->
       <div class="mobile-logo">
-        <span class="logo-icon">👁</span>
-        <span class="logo-text">God's Tracker</span>
+        <span class="logo-icon">◉</span>
+        <span class="logo-text">{{ 'app.brand' | translate }}</span>
       </div>
 
       <div class="form-header">
-        <h2>Bienvenido de vuelta</h2>
-        <p>Ingresa tus credenciales para continuar.</p>
+        <h2>{{ 'auth.welcome' | translate }}</h2>
+        <p>{{ 'auth.loginHelp' | translate }}</p>
       </div>
 
-      <!-- Demo shortcut badges -->
       <div class="demo-badges">
         <button type="button" class="demo-badge" (click)="fillDemo('empresa')" matRipple>
-          <mat-icon>business</mat-icon> Demo Empresa
+          <mat-icon>business</mat-icon> {{ 'auth.demoCompany' | translate }}
         </button>
         <button type="button" class="demo-badge" (click)="fillDemo('persona')" matRipple>
-          <mat-icon>person</mat-icon> Demo Personal
+          <mat-icon>person</mat-icon> {{ 'auth.demoPersonal' | translate }}
         </button>
       </div>
 
-      <!-- Error banner -->
       @if (store.error()) {
         <div class="error-banner" role="alert">
           <mat-icon>error_outline</mat-icon>
@@ -67,85 +61,56 @@
       }
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="login-form">
-
-        <!-- Email -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Correo electrónico</mat-label>
+          <mat-label>{{ 'common.email' | translate }}</mat-label>
           <mat-icon matPrefix>mail_outline</mat-icon>
-          <input
-            matInput
-            type="email"
-            formControlName="email"
-            placeholder="tu@correo.com"
-            autocomplete="email"
-          />
+          <input matInput type="email" formControlName="email" [placeholder]="'auth.emailPlaceholder' | translate" autocomplete="email" />
           @if (emailCtrl.hasError('required') && emailCtrl.touched) {
-            <mat-error>El email es obligatorio.</mat-error>
+            <mat-error>{{ 'validation.emailRequired' | translate }}</mat-error>
           }
           @if (emailCtrl.hasError('email') && emailCtrl.touched) {
-            <mat-error>Ingresa un email válido.</mat-error>
+            <mat-error>{{ 'validation.emailInvalid' | translate }}</mat-error>
           }
         </mat-form-field>
 
-        <!-- Password -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Contraseña</mat-label>
+          <mat-label>{{ 'common.password' | translate }}</mat-label>
           <mat-icon matPrefix>lock_outline</mat-icon>
-          <input
-            matInput
-            [type]="showPassword() ? 'text' : 'password'"
-            formControlName="password"
-            placeholder="Mínimo 8 caracteres"
-            autocomplete="current-password"
-          />
-          <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            (click)="togglePassword()"
-            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-          >
+          <input matInput [type]="showPassword() ? 'text' : 'password'" formControlName="password" [placeholder]="'auth.passwordPlaceholder' | translate" autocomplete="current-password" />
+          <button mat-icon-button matSuffix type="button" (click)="togglePassword()" [attr.aria-label]="(showPassword() ? 'auth.hidePassword' : 'auth.showPassword') | translate">
             <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           @if (passCtrl.hasError('required') && passCtrl.touched) {
-            <mat-error>La contraseña es obligatoria.</mat-error>
+            <mat-error>{{ 'validation.passwordRequired' | translate }}</mat-error>
           }
           @if (passCtrl.hasError('minlength') && passCtrl.touched) {
-            <mat-error>Mínimo 8 caracteres.</mat-error>
+            <mat-error>{{ 'validation.passwordMin' | translate }}</mat-error>
           }
         </mat-form-field>
 
-        <!-- Forgot password -->
         <div class="form-actions-top">
-          <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+          <a href="#" class="forgot-link">{{ 'auth.forgotPassword' | translate }}</a>
         </div>
 
-        <!-- Submit -->
-        <button
-          mat-flat-button
-          type="submit"
-          class="submit-btn full-width"
-          [disabled]="store.isLoading()"
-        >
+        <button mat-flat-button type="submit" class="submit-btn full-width" [disabled]="store.isLoading()">
+          @if (!store.isLoading()) {
+            <mat-icon>login</mat-icon>
+          }
           @if (store.isLoading()) {
             <mat-progress-spinner diameter="20" mode="indeterminate" />
-            Ingresando…
+            {{ 'auth.loggingIn' | translate }}
           } @else {
-            <mat-icon>login</mat-icon>
-            Iniciar Sesión
+            {{ 'auth.signIn' | translate }}
           }
         </button>
-
       </form>
 
       <mat-divider />
 
       <p class="register-cta">
-        ¿No tienes cuenta?
-        <a routerLink="/register" class="register-link">Regístrate gratis</a>
+        {{ 'auth.noAccount' | translate }}
+        <a routerLink="/register" class="register-link">{{ 'auth.registerFree' | translate }}</a>
       </p>
-
     </div>
   </main>
-
 </div>

@@ -1,17 +1,13 @@
-// src/app/iam/presentation/pages/profile/profile.ts
-
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
+  AbstractControl,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
-  Validators,
-  AbstractControl,
   ValidationErrors,
+  Validators,
 } from '@angular/forms';
-
-// Angular Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,7 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { IamStore } from '../../../application/iam.store';
 
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
@@ -47,6 +43,7 @@ function strongPasswordValidator(control: AbstractControl): ValidationErrors | n
     MatDividerModule,
     MatChipsModule,
     MatSnackBarModule,
+    TranslatePipe,
   ],
   templateUrl: './profile.html',
   styleUrls: ['./profile.scss'],
@@ -55,6 +52,7 @@ export class Profile implements OnInit {
   protected readonly store = inject(IamStore);
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   protected profileForm!: FormGroup;
   protected passwordForm!: FormGroup;
@@ -83,7 +81,12 @@ export class Profile implements OnInit {
       return;
     }
     this.store.updateProfile(this.profileForm.getRawValue()).subscribe({
-      next: () => this.snackBar.open('Perfil actualizado correctamente.', 'OK', { duration: 3000 }),
+      next: () =>
+        this.snackBar.open(
+          this.translate.instant('profile.profileUpdated'),
+          this.translate.instant('common.ok'),
+          { duration: 3000 },
+        ),
       error: () => {},
     });
   }
@@ -96,7 +99,11 @@ export class Profile implements OnInit {
     this.store.changePassword(this.passwordForm.getRawValue()).subscribe({
       next: () => {
         this.passwordForm.reset();
-        this.snackBar.open('Contraseña cambiada correctamente.', 'OK', { duration: 3000 });
+        this.snackBar.open(
+          this.translate.instant('profile.passwordChanged'),
+          this.translate.instant('common.ok'),
+          { duration: 3000 },
+        );
       },
       error: () => {},
     });

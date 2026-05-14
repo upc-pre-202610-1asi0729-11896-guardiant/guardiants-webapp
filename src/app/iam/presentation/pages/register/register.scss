@@ -107,6 +107,12 @@
   padding: 1rem 0 3rem;
 }
 
+.auth-language {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
 // ── Mobile logo ───────────────────────────────────────────────────────────────
    .mobile-logo {
      display: none;

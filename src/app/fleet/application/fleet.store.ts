@@ -1,15 +1,30 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, catchError, map, tap, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { Vehicle } from '../domain/model/vehicle.entity';
 import { VehicleAssembler } from '../infrastructure/vehicle-assembler';
-import { Observable, catchError, tap, throwError, map } from 'rxjs';
 import { VehicleResource } from '../infrastructure/vehicle-response';
-import { environment } from '../../../environments/environment';
 
 interface FleetState {
   vehicles: Vehicle[];
   isLoading: boolean;
   error: string | null;
+}
+
+export interface VehiclePayload {
+  organizationId: string;
+  plate: string;
+  brand: string;
+  model: string;
+  status: string;
+  capacity: number;
+  lastLocation?: string;
+  lastLat?: number;
+  lastLng?: number;
+  speedKmh?: number;
+  batteryPct?: number;
+  deviceStatus?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -23,12 +38,10 @@ export class FleetStore {
     error: null,
   });
 
-  // ── Public signals (read-only projections) ───────────────────────────────
   readonly vehicles = computed(() => this._state().vehicles);
   readonly isLoading = computed(() => this._state().isLoading);
   readonly error = computed(() => this._state().error);
 
-  // ── Actions ────────────────────────────────────────────────────────────────
   loadVehicles(): Observable<Vehicle[]> {
     this._patch({ isLoading: true, error: null });
 
@@ -39,7 +52,7 @@ export class FleetStore {
       }),
       map(() => this._state().vehicles),
       catchError((err) => {
-        const errorMsg = err?.message ?? 'Error al cargar vehículos.';
+        const errorMsg = err?.message ?? 'Error al cargar vehiculos.';
         this._patch({ isLoading: false, error: errorMsg });
         return throwError(() => err);
       }),
@@ -47,29 +60,64 @@ export class FleetStore {
   }
 
   blockVehicle(vehicleId: string): Observable<Vehicle> {
-    return this.http.patch<VehicleResource>(
-      `${environment.apiBaseUrl}/vehicles/${vehicleId}`,
-      { status: 'BLOCKED' }
-    ).pipe(
+    return this.updateVehicleStatus(vehicleId, 'BLOCKED');
+  }
+
+  unblockVehicle(vehicleId: string): Observable<Vehicle> {
+    return this.updateVehicleStatus(vehicleId, 'ACTIVE');
+  }
+
+  createVehicle(payload: VehiclePayload): Observable<Vehicle> {
+    const resource: VehicleResource = {
+      ...payload,
+      id: `VEH-${Date.now()}`,
+      createdAt: new Date(),
+      lastUpdated: 'now',
+      mileageKm: 0,
+    };
+
+    return this.http.post<VehicleResource>(`${environment.apiBaseUrl}/vehicles`, resource).pipe(
       tap((response) => {
-        const updatedVehicle = this.assembler.toEntityFromResource(response);
-        const vehicles = this._state().vehicles.map((v) =>
-          v.id === vehicleId ? updatedVehicle : v
-        );
-        this._patch({ vehicles });
+        const createdVehicle = this.assembler.toEntityFromResource(response);
+        this._patch({ vehicles: [...this._state().vehicles, createdVehicle] });
       }),
       map((response) => this.assembler.toEntityFromResource(response)),
       catchError((err) => {
-        const errorMsg = err?.message ?? 'Error al bloquear vehículo.';
+        const errorMsg = err?.message ?? 'Error al crear vehiculo.';
         this._patch({ error: errorMsg });
         return throwError(() => err);
       }),
     );
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────
+  updateVehicle(vehicleId: string, payload: Partial<VehiclePayload>): Observable<Vehicle> {
+    return this.http
+      .patch<VehicleResource>(`${environment.apiBaseUrl}/vehicles/${vehicleId}`, {
+        ...payload,
+        lastUpdated: 'now',
+      })
+      .pipe(
+        tap((response) => {
+          const updatedVehicle = this.assembler.toEntityFromResource(response);
+          const vehicles = this._state().vehicles.map((v) =>
+            v.id === vehicleId ? updatedVehicle : v,
+          );
+          this._patch({ vehicles });
+        }),
+        map((response) => this.assembler.toEntityFromResource(response)),
+        catchError((err) => {
+          const errorMsg = err?.message ?? 'Error al actualizar vehiculo.';
+          this._patch({ error: errorMsg });
+          return throwError(() => err);
+        }),
+      );
+  }
+
+  updateVehicleStatus(vehicleId: string, status: string): Observable<Vehicle> {
+    return this.updateVehicle(vehicleId, { status });
+  }
+
   private _patch(partial: Partial<FleetState>): void {
     this._state.update((s) => ({ ...s, ...partial }));
   }
 }
-

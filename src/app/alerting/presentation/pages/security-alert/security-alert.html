@@ -1,51 +1,32 @@
-<!-- src/app/alerting/presentation/pages/security-alert/security-alert.html -->
-<!-- 👆 Sin <app-shell> wrapper — el AppShell ya envuelve esto desde el router -->
-
 <section class="alert-page">
-
-  <!-- ── Left: Alerts list ───────────────────────────────────────────────── -->
   <div class="alerts-main">
-
     <div class="page-header">
-      <h1 class="page-title">Security Alert</h1>
-      <button type="button" class="icon-button-sm" aria-label="history">🕐</button>
+      <h1 class="page-title">{{ 'alerts.title' | translate }}</h1>
+      <button type="button" class="icon-button-sm" [attr.aria-label]="'alerts.history' | translate">◷</button>
     </div>
 
     <div class="filter-tabs">
-      <button
-        type="button"
-        class="tab-btn"
-        [class.tab-active]="readFilter() === 'all'"
-        (click)="setReadFilter('all')">
-        All
+      <button type="button" class="tab-btn" [class.tab-active]="readFilter() === 'all'" (click)="setReadFilter('all')">
+        {{ 'alerts.all' | translate }}
       </button>
-      <button
-        type="button"
-        class="tab-btn"
-        [class.tab-active]="readFilter() === 'unread'"
-        (click)="setReadFilter('unread')">
-        Unread
+      <button type="button" class="tab-btn" [class.tab-active]="readFilter() === 'unread'" (click)="setReadFilter('unread')">
+        {{ 'alerts.unread' | translate }}
         <span class="badge" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
       </button>
     </div>
 
     <div class="time-filters">
-      <button
-        *ngFor="let tf of timeFilters"
-        type="button"
-        class="chip"
-        [class.chip-active]="timeFilter() === tf.value"
-        (click)="setTimeFilter(tf.value)">
-        {{ tf.label }}
+      <button *ngFor="let tf of timeFilters" type="button" class="chip" [class.chip-active]="timeFilter() === tf.value" (click)="setTimeFilter(tf.value)">
+        {{ tf.label | translate }}
       </button>
     </div>
 
-    <div class="loading-banner" *ngIf="isLoading()">Loading alerts…</div>
+    <div class="loading-banner" *ngIf="isLoading()">{{ 'alerts.loading' | translate }}</div>
     <div class="error-banner" *ngIf="error() && !isLoading()">{{ error() }}</div>
 
     <div class="empty-state" *ngIf="!isLoading() && !error() && alerts().length === 0">
-      <span>✅</span>
-      <p>No alerts for the selected period.</p>
+      <span>✓</span>
+      <p>{{ 'alerts.empty' | translate }}</p>
     </div>
 
     <div class="alert-list" *ngIf="!isLoading()">
@@ -56,7 +37,7 @@
             <span class="alert-title">{{ alert.typeLabel }}</span>
           </div>
           <div class="alert-location">
-            <span class="loc-icon">📍</span>
+            <span class="loc-icon">⌖</span>
             <span>{{ alert.location }}</span>
           </div>
           <div class="alert-detail">
@@ -66,10 +47,10 @@
         </div>
         <div class="alert-card-actions">
           <button type="button" class="btn-view" (click)="viewDetail(alert.id)">
-            View Detail ▶
+            {{ 'alerts.viewDetail' | translate }} >
           </button>
           <button type="button" class="btn-block" (click)="blockVehicle(alert.vehicleId)">
-            Block Vehicle ▶
+            {{ 'alerts.blockVehicle' | translate }} >
           </button>
         </div>
       </article>
@@ -78,18 +59,16 @@
     <div class="map-placeholder" aria-label="map placeholder"></div>
   </div>
 
-  <!-- ── Right: Sidebar panel ────────────────────────────────────────────── -->
   <aside class="alert-sidebar">
-
     <section class="recent-alerts-panel">
-      <h3 class="panel-title">Recent Alerts</h3>
+      <h3 class="panel-title">{{ 'alerts.recentAlerts' | translate }}</h3>
       <div class="recent-list">
         <div class="recent-item" *ngFor="let ra of recentAlerts()">
           <div class="recent-info">
             <span class="recent-desc">{{ ra.typeLabel }}</span>
             <span class="recent-time">{{ timeAgo(ra.createdAt) }}</span>
           </div>
-          <button type="button" class="btn-view-sm" (click)="viewDetail(ra.id)">View</button>
+          <button type="button" class="btn-view-sm" (click)="viewDetail(ra.id)">{{ 'common.view' | translate }}</button>
         </div>
       </div>
     </section>
@@ -97,15 +76,15 @@
     <section class="quick-actions-panel">
       <button type="button" class="quick-action">
         <span class="qa-icon">🔒</span>
-        <span>BLOCK</span>
+        <span>{{ 'alerts.block' | translate }}</span>
       </button>
       <button type="button" class="quick-action">
-        <span class="qa-icon">🔑</span>
-        <span>ROBBERY REPORT</span>
+        <span class="qa-icon">!</span>
+        <span>{{ 'alerts.robberyReport' | translate }}</span>
       </button>
       <button type="button" class="quick-action">
-        <span class="qa-icon">📍</span>
-        <span>SHARE LOCATION</span>
+        <span class="qa-icon">⌖</span>
+        <span>{{ 'alerts.shareLocation' | translate }}</span>
       </button>
     </section>
 
@@ -113,14 +92,12 @@
       <span class="user-icon">👤</span>
       <div class="user-info">
         <span class="user-name">{{ userName() }}</span>
-        <span class="user-plan">Plan: {{ userPlan() }}</span>
+        <span class="user-plan">{{ 'common.plan' | translate }}: {{ userPlan() }}</span>
         <span class="device-status">
-          DEVICE: CONNECTED
+          {{ 'alerts.deviceConnected' | translate }}
           <span class="status-dot"></span>
         </span>
       </div>
     </section>
-
   </aside>
-
 </section>

@@ -1,14 +1,14 @@
 <section class="home-page">
   <div class="home-header">
-    <h1 class="greeting">Hi, {{ userName() }}</h1>
-    <p class="subtitle">Fleet overview powered by live data from the mock API.</p>
+    <h1 class="greeting">{{ 'home.greeting' | translate: { name: userName() } }}</h1>
+    <p class="subtitle">{{ 'home.subtitle' | translate }}</p>
   </div>
 
   <section class="summary-card" *ngIf="activeVehicle() as vehicle; else emptyState">
     <div class="summary-main">
       <div class="vehicle-title">
         <span class="vehicle-icon">🚙</span>
-        <strong>Vehicle: {{ vehicle.status === 'ACTIVE' ? 'Active' : vehicle.status }}</strong>
+        <strong>{{ 'home.vehicle' | translate }}: {{ ('fleet.status.' + vehicle.status) | translate }}</strong>
         <span class="status-dot"></span>
       </div>
 
@@ -16,96 +16,158 @@
 
       <div class="summary-meta">
         <div class="summary-row">
-          <span class="summary-marker">📍</span>
-          <span>{{ vehicle.lastLocation ?? 'Sin ubicación' }}</span>
+          <span class="summary-marker">⌖</span>
+          <span>{{ vehicle.lastLocation ?? ('common.noLocation' | translate) }}</span>
         </div>
         <div class="summary-row">
-          <span class="summary-marker">◔</span>
-          <span>Updated {{ vehicle.lastUpdated ?? '--' }} ago</span>
+          <span class="summary-marker">◷</span>
+          <span>{{ 'home.updatedAgo' | translate: { time: vehicle.lastUpdated ?? '--' } }}</span>
         </div>
       </div>
     </div>
 
     <div class="summary-actions">
-      <button type="button" class="danger-button" (click)="toggleBlockMenu()">
+      <button type="button" class="danger-button" (click)="$event.stopPropagation(); toggleBlockMenu()">
         <span>🔒</span>
-        <span>Block Vehicle</span>
+        <span>{{ 'home.blockVehicle' | translate }}</span>
       </button>
-      <button type="button" class="ghost-button">View on Map</button>
+      <button type="button" class="ghost-button" (click)="$event.stopPropagation(); toggleUnblockMenu()">
+        <span>🔓</span>
+        <span>{{ 'home.unblockVehicle' | translate }}</span>
+      </button>
+      <button type="button" class="ghost-button" (click)="$event.stopPropagation(); toggleAddVehicle()">
+        <span>+</span>
+        <span>{{ 'home.addVehicle' | translate }}</span>
+      </button>
+      <button type="button" class="ghost-button">{{ 'home.viewOnMap' | translate }}</button>
     </div>
 
-    <!-- Submenú de bloqueo de vehículos -->
-    <div class="block-menu" *ngIf="isBlockMenuOpen()">
+    <div class="block-menu" *ngIf="isBlockMenuOpen()" (click)="$event.stopPropagation()">
       <div class="block-menu-header">
-        <h3>Select Vehicle to Block</h3>
-        <button type="button" class="close-btn" (click)="toggleBlockMenu()">✕</button>
+        <h3>{{ 'home.selectVehicleToBlock' | translate }}</h3>
+        <button type="button" class="close-btn" (click)="toggleBlockMenu()">x</button>
       </div>
       <div class="block-menu-content">
-        <div
-          *ngFor="let vehicle of vehicles()"
-          class="vehicle-option"
-          [class.blocked]="vehicle.status === 'BLOCKED'"
-        >
+        <div *ngFor="let vehicle of vehicles()" class="vehicle-option" [class.blocked]="vehicle.status === 'BLOCKED'">
           <div class="vehicle-info">
             <span class="vehicle-plate">{{ vehicle.plate }}</span>
             <span class="vehicle-model">{{ vehicle.brand }} {{ vehicle.model }}</span>
             <span class="vehicle-status" [class.status-blocked]="vehicle.status === 'BLOCKED'">
-              {{ vehicle.status }}
+              {{ ('fleet.status.' + vehicle.status) | translate }}
             </span>
           </div>
-          <button
-            type="button"
-            class="action-btn"
-            (click)="blockVehicle(vehicle.id)"
-            [disabled]="vehicle.status === 'BLOCKED' || isBlockingVehicle()"
-          >
-            {{ vehicle.status === 'BLOCKED' ? 'Blocked' : 'Block' }}
+          <button type="button" class="action-btn" (click)="blockVehicle(vehicle.id)" [disabled]="vehicle.status === 'BLOCKED' || isBlockingVehicle()">
+            {{ (vehicle.status === 'BLOCKED' ? 'home.blocked' : 'home.block') | translate }}
           </button>
         </div>
       </div>
     </div>
+
+    <div class="block-menu" *ngIf="isUnblockMenuOpen()" (click)="$event.stopPropagation()">
+      <div class="block-menu-header">
+        <h3>{{ 'home.selectVehicleToUnblock' | translate }}</h3>
+        <button type="button" class="close-btn" (click)="toggleUnblockMenu()">x</button>
+      </div>
+      <div class="block-menu-content">
+        <div *ngFor="let vehicle of vehicles()" class="vehicle-option" [class.blocked]="vehicle.status === 'BLOCKED'">
+          <div class="vehicle-info">
+            <span class="vehicle-plate">{{ vehicle.plate }}</span>
+            <span class="vehicle-model">{{ vehicle.brand }} {{ vehicle.model }}</span>
+            <span class="vehicle-status" [class.status-blocked]="vehicle.status === 'BLOCKED'">
+              {{ ('fleet.status.' + vehicle.status) | translate }}
+            </span>
+          </div>
+          <button type="button" class="action-btn" (click)="unblockVehicle(vehicle.id)" [disabled]="vehicle.status !== 'BLOCKED' || isBlockingVehicle()">
+            {{ 'home.unblock' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <form class="vehicle-form-panel" *ngIf="isAddVehicleOpen()" [formGroup]="vehicleForm" (ngSubmit)="addVehicle()" (click)="$event.stopPropagation()">
+      <div class="block-menu-header">
+        <h3>{{ 'home.addVehicle' | translate }}</h3>
+        <button type="button" class="close-btn" (click)="toggleAddVehicle()">x</button>
+      </div>
+      <div class="vehicle-form-grid">
+        <label>
+          <span>{{ 'vehicleItem.plate' | translate }}</span>
+          <input type="text" formControlName="plate" />
+        </label>
+        <label>
+          <span>{{ 'vehicleItem.brand' | translate }}</span>
+          <input type="text" formControlName="brand" />
+        </label>
+        <label>
+          <span>{{ 'vehicleItem.model' | translate }}</span>
+          <input type="text" formControlName="model" />
+        </label>
+        <label>
+          <span>{{ 'vehicleItem.capacity' | translate }}</span>
+          <input type="number" formControlName="capacity" />
+        </label>
+        <label>
+          <span>{{ 'common.location' | translate }}</span>
+          <input type="text" formControlName="lastLocation" />
+        </label>
+        <label>
+          <span>Lat</span>
+          <input type="number" step="0.0001" formControlName="lastLat" />
+        </label>
+        <label>
+          <span>Lng</span>
+          <input type="number" step="0.0001" formControlName="lastLng" />
+        </label>
+        <label>
+          <span>{{ 'common.battery' | translate }}</span>
+          <input type="number" formControlName="batteryPct" />
+        </label>
+      </div>
+      <button type="submit" class="action-btn vehicle-form-submit" [disabled]="isSavingVehicle()">
+        {{ 'home.saveVehicle' | translate }}
+      </button>
+    </form>
   </section>
 
   <ng-template #emptyState>
     <section class="summary-card empty-summary">
-      <p>No vehicles registered</p>
+      <p>{{ 'home.noVehicles' | translate }}</p>
     </section>
   </ng-template>
 
   <section class="stats-grid">
     <article class="stat-card">
       <div class="stat-head">
-        <span class="stat-icon">⚠</span>
-        <span class="stat-label">ALERTS TODAY</span>
+        <span class="stat-icon">!</span>
+        <span class="stat-label">{{ 'home.alertsToday' | translate }}</span>
       </div>
       <strong class="stat-value">{{ alertsToday() }}</strong>
     </article>
     <article class="stat-card">
       <div class="stat-head">
-        <span class="stat-icon">🗺</span>
-        <span class="stat-label">Routes</span>
+        <span class="stat-icon">⌁</span>
+        <span class="stat-label">{{ 'home.routes' | translate }}</span>
       </div>
       <strong class="stat-value">{{ routesCount() }}</strong>
     </article>
     <article class="stat-card">
       <div class="stat-head">
         <span class="stat-icon">⌖</span>
-        <span class="stat-label">GPS</span>
+        <span class="stat-label">{{ 'common.gps' | translate }}</span>
       </div>
-      <strong class="stat-value">{{ activeGps() }}</strong>
+      <strong class="stat-value">{{ (activeGps() ? 'home.activeGpsHigh' : 'home.activeGpsNoSignal') | translate }}</strong>
     </article>
     <article class="stat-card">
       <div class="stat-head">
         <span class="stat-icon">▭</span>
-        <span class="stat-label">Battery</span>
+        <span class="stat-label">{{ 'home.battery' | translate }}</span>
       </div>
       <strong class="stat-value">{{ activeBattery() }}%</strong>
     </article>
   </section>
 
-  <section class="map-placeholder" aria-label="map placeholder"></section>
+  <app-vehicle-map [vehicles]="vehicles()" [selectedVehicle]="activeVehicle()" height="280px"></app-vehicle-map>
 
-  <div class="loading-banner" *ngIf="isLoading()">Loading vehicles...</div>
+  <div class="loading-banner" *ngIf="isLoading()">{{ 'common.loadingVehicles' | translate }}</div>
   <div class="error-banner" *ngIf="error() && !isLoading()">{{ error() }}</div>
 </section>
-

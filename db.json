@@ -1,4 +1,62 @@
 {
+  "roles": [
+    {
+      "id": 1,
+      "name": "PERSONA_NATURAL"
+    },
+    {
+      "id": 2,
+      "name": "EMPRESA"
+    }
+  ],
+  "organizations": [
+    {
+      "id": "ORG-001",
+      "name": "Transportes Lima S.A.C.",
+      "status": "ACTIVE",
+      "type": "COMPANY",
+      "createdAt": "2026-01-01T08:00:00.000Z"
+    },
+    {
+      "id": "ORG-002",
+      "name": "Enrique Castillo",
+      "status": "ACTIVE",
+      "type": "PERSONAL",
+      "createdAt": "2026-01-03T08:00:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "USR-001",
+      "organizationId": "ORG-001",
+      "roleId": 2,
+      "firstName": "Transportes",
+      "lastName": "Lima S.A.C.",
+      "email": "empresa@godstrack.com",
+      "passwordHash": "Demo1234!",
+      "status": "ACTIVE",
+      "role": "EMPRESA",
+      "plan": "PRO",
+      "companyName": "Transportes Lima S.A.C.",
+      "ruc": "20512345678",
+      "phone": "+51 999 888 777",
+      "createdAt": "2026-01-01T08:00:00.000Z"
+    },
+    {
+      "id": "USR-002",
+      "organizationId": "ORG-002",
+      "roleId": 1,
+      "firstName": "Enrique",
+      "lastName": "Castillo",
+      "email": "enrique@godstrack.com",
+      "passwordHash": "Demo1234!",
+      "status": "ACTIVE",
+      "role": "PERSONA_NATURAL",
+      "plan": "BASIC",
+      "phone": "+51 911 222 333",
+      "createdAt": "2026-01-03T08:00:00.000Z"
+    }
+  ],
   "vehicles": [
     {
       "id": "VEH-001",
@@ -71,6 +129,169 @@
       "speedKmh": 36,
       "batteryPct": 88,
       "deviceStatus": "CONNECTED"
+    },
+    {
+      "id": "VEH-005",
+      "organizationId": "ORG-001",
+      "plate": "GAT-2026",
+      "brand": "Isuzu",
+      "model": "NPR",
+      "status": "ACTIVE",
+      "capacity": 1800,
+      "createdAt": "2026-04-12T09:10:00Z",
+      "lastLocation": "Chorrillos",
+      "lastUpdated": "5 min",
+      "mileageKm": 9200,
+      "lastLat": -12.1693,
+      "lastLng": -77.0255,
+      "speedKmh": 18,
+      "batteryPct": 91,
+      "deviceStatus": "CONNECTED"
+    }
+  ],
+  "devices": [
+    {
+      "id": "DEV-001",
+      "vehicleId": "VEH-001",
+      "serialNumber": "GAT-GPS-001",
+      "status": "CONNECTED",
+      "assignedAt": "2026-01-15T10:45:00.000Z",
+      "unassignedAt": null
+    },
+    {
+      "id": "DEV-002",
+      "vehicleId": "VEH-002",
+      "serialNumber": "GAT-GPS-002",
+      "status": "CONNECTED",
+      "assignedAt": "2026-02-20T15:00:00.000Z",
+      "unassignedAt": null
+    },
+    {
+      "id": "DEV-003",
+      "vehicleId": "VEH-003",
+      "serialNumber": "GAT-GPS-003",
+      "status": "IDLE",
+      "assignedAt": "2026-03-10T08:30:00.000Z",
+      "unassignedAt": null
+    },
+    {
+      "id": "DEV-004",
+      "vehicleId": "VEH-004",
+      "serialNumber": "GAT-GPS-004",
+      "status": "CONNECTED",
+      "assignedAt": "2026-03-25T11:35:00.000Z",
+      "unassignedAt": null
+    },
+    {
+      "id": "DEV-005",
+      "vehicleId": "VEH-005",
+      "serialNumber": "GAT-GPS-005",
+      "status": "CONNECTED",
+      "assignedAt": "2026-04-12T09:25:00.000Z",
+      "unassignedAt": null
+    }
+  ],
+  "telemetryPoints": [
+    {
+      "id": "TEL-001",
+      "deviceId": "DEV-001",
+      "recordedAt": "2026-05-14T11:20:00.000Z",
+      "lat": -12.0864,
+      "lng": -76.9632,
+      "speed": 42,
+      "signalQuality": 89
+    },
+    {
+      "id": "TEL-002",
+      "deviceId": "DEV-002",
+      "recordedAt": "2026-05-14T11:18:00.000Z",
+      "lat": -12.0974,
+      "lng": -77.0362,
+      "speed": 28,
+      "signalQuality": 94
+    },
+    {
+      "id": "TEL-003",
+      "deviceId": "DEV-003",
+      "recordedAt": "2026-05-14T10:25:00.000Z",
+      "lat": -12.1203,
+      "lng": -77.0308,
+      "speed": 0,
+      "signalQuality": 61
+    },
+    {
+      "id": "TEL-004",
+      "deviceId": "DEV-004",
+      "recordedAt": "2026-05-14T11:19:30.000Z",
+      "lat": -12.1138,
+      "lng": -76.9907,
+      "speed": 36,
+      "signalQuality": 96
+    },
+    {
+      "id": "TEL-005",
+      "deviceId": "DEV-005",
+      "recordedAt": "2026-05-14T11:15:00.000Z",
+      "lat": -12.1693,
+      "lng": -77.0255,
+      "speed": 18,
+      "signalQuality": 92
+    }
+  ],
+  "vehicleStatusView": [
+    {
+      "vehicleId": "VEH-001",
+      "organizationId": "ORG-001",
+      "lastLat": -12.0864,
+      "lastLng": -76.9632,
+      "lastSpeed": 42,
+      "lastUpdate": "2026-05-14T11:20:00.000Z",
+      "activeAlerts": 1,
+      "deviceStatus": "CONNECTED"
+    },
+    {
+      "vehicleId": "VEH-002",
+      "organizationId": "ORG-001",
+      "lastLat": -12.0974,
+      "lastLng": -77.0362,
+      "lastSpeed": 28,
+      "lastUpdate": "2026-05-14T11:18:00.000Z",
+      "activeAlerts": 0,
+      "deviceStatus": "CONNECTED"
+    }
+  ],
+  "drivingReportView": [
+    {
+      "id": "DRV-001",
+      "vehicleId": "VEH-002",
+      "periodStart": "2026-05-01T00:00:00.000Z",
+      "periodEnd": "2026-05-14T23:59:59.000Z",
+      "score": 86,
+      "totalKm": 980.5,
+      "summary": "Stable driving pattern with moderate speed.",
+      "generatedAt": "2026-05-14T11:00:00.000Z"
+    }
+  ],
+  "alertRules": [
+    {
+      "id": "RULE-001",
+      "organizationId": "ORG-001",
+      "vehicleId": "VEH-001",
+      "type": "SUSPICIOUS_MOVEMENT",
+      "severity": "HIGH",
+      "enabled": true,
+      "configJson": "{\"outsideHours\":true}",
+      "createdAt": "2026-01-15T11:00:00.000Z"
+    },
+    {
+      "id": "RULE-002",
+      "organizationId": "ORG-001",
+      "vehicleId": "VEH-003",
+      "type": "TAMPERED_GPS",
+      "severity": "MEDIUM",
+      "enabled": true,
+      "configJson": "{\"signalThreshold\":50}",
+      "createdAt": "2026-03-10T09:00:00.000Z"
     }
   ],
   "alerts": [
@@ -112,6 +333,71 @@
       "location": "Panamericana Norte Km 23",
       "detail": "Vehicle exited designated zone",
       "createdAt": "2026-05-13T08:00:00.000Z"
+    }
+  ],
+  "alertAcknowledgements": [
+    {
+      "alertId": "a1",
+      "userId": "USR-001",
+      "ackedAt": "2026-05-13T10:45:00.000Z",
+      "comment": "Reviewed by fleet operator."
+    }
+  ],
+  "commands": [
+    {
+      "id": "CMD-001",
+      "vehicleId": "VEH-001",
+      "deviceId": "DEV-001",
+      "requestedByUserId": "USR-001",
+      "type": "BLOCK_VEHICLE",
+      "status": "CONFIRMED",
+      "requestedAt": "2026-05-13T10:32:00.000Z"
+    }
+  ],
+  "commandAcks": [
+    {
+      "commandId": "CMD-001",
+      "ackedAt": "2026-05-13T10:32:15.000Z",
+      "result": "SUCCESS"
+    }
+  ],
+  "plans": [
+    {
+      "id": 1,
+      "name": "Basic",
+      "planTier": "BASIC",
+      "maxVehicles": 2,
+      "price": 19.9,
+      "createdAt": "2026-01-01T08:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Pro",
+      "planTier": "PRO",
+      "maxVehicles": 20,
+      "price": 79.9,
+      "createdAt": "2026-01-01T08:00:00.000Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "SUB-001",
+      "organizationId": "ORG-001",
+      "planId": 2,
+      "status": "ACTIVE",
+      "startDate": "2026-01-01T08:00:00.000Z",
+      "endDate": null
+    }
+  ],
+  "payments": [
+    {
+      "id": "PAY-001",
+      "subscriptionId": "SUB-001",
+      "amount": 79.9,
+      "currency": "PEN",
+      "status": "PAID",
+      "paidAt": "2026-05-01T08:00:00.000Z",
+      "createdAt": "2026-05-01T07:55:00.000Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

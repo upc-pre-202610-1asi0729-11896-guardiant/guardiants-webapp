@@ -2,13 +2,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { IamStore } from '../../../../iam/application/iam.store';
 import { LanguageSwitcher } from '../../components/language-switcher/language-switcher';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, LanguageSwitcher],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, LanguageSwitcher, TranslatePipe],
   templateUrl: './app-shell.html',
   styleUrls: ['./app-shell.css'],
 })

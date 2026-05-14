@@ -14,9 +14,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatRippleModule } from '@angular/material/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 // Store
 import { IamStore } from '../../../application/iam.store';
+import { LanguageSwitcher } from '../../../../shared/presentation/components/language-switcher/language-switcher';
 
 @Component({
   selector: 'app-login',
@@ -33,6 +35,8 @@ import { IamStore } from '../../../application/iam.store';
     MatProgressSpinnerModule,
     MatDividerModule,
     MatRippleModule,
+    TranslatePipe,
+    LanguageSwitcher,
   ],
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],

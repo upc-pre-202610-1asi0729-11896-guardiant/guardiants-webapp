@@ -134,6 +134,12 @@
   max-width: 420px;
 }
 
+.auth-language {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
 // ── Mobile logo ───────────────────────────────────────────────────────────────
    .mobile-logo {
      display: none;

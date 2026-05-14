@@ -23,10 +23,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslatePipe } from '@ngx-translate/core';
 
 // Store
 import { IamStore } from '../../../application/iam.store';
 import { UserRole } from '../../../domain/model/user.entity';
+import { LanguageSwitcher } from '../../../../shared/presentation/components/language-switcher/language-switcher';
 
 // Custom validator: passwords must match
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -63,6 +65,8 @@ function strongPasswordValidator(control: AbstractControl): ValidationErrors | n
     MatStepperModule,
     MatButtonToggleModule,
     MatTooltipModule,
+    TranslatePipe,
+    LanguageSwitcher,
   ],
   templateUrl: './register.html',
   styleUrls: ['./register.scss'],

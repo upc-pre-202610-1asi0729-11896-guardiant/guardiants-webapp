@@ -1,5 +1,21 @@
 <div class="language-switcher" aria-label="Preferred Language">
-  <span class="language is-active">ES</span>
+  <button
+    type="button"
+    class="language"
+    [class.is-active]="currentLanguage() === 'en'"
+    (click)="useLanguage('en')"
+    aria-label="Use English"
+  >
+    EN
+  </button>
   <span class="separator">|</span>
-  <span class="language">EN</span>
+  <button
+    type="button"
+    class="language"
+    [class.is-active]="currentLanguage() === 'es'"
+    (click)="useLanguage('es')"
+    aria-label="Usar espanol"
+  >
+    ES
+  </button>
 </div>

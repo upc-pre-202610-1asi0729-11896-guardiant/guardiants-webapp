@@ -417,3 +417,24 @@
     flex-wrap: wrap;
   }
 }
+
+@media (max-width: 560px) {
+  .alerts-main {
+    padding: 20px 16px;
+  }
+
+  .alert-card {
+    flex-direction: column;
+  }
+
+  .alert-card-actions,
+  .btn-view,
+  .btn-block {
+    width: 100%;
+  }
+
+  .alert-sidebar {
+    padding: 16px;
+    flex-direction: column;
+  }
+}
