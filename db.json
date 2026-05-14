@@ -364,18 +364,47 @@
   "plans": [
     {
       "id": 1,
-      "name": "Basic",
+      "name": "Básico",
       "planTier": "BASIC",
-      "maxVehicles": 2,
+      "maxVehicles": 3,
+      "maxDevices": 3,
       "price": 19.9,
       "createdAt": "2026-01-01T08:00:00.000Z"
     },
     {
       "id": 2,
+      "name": "Medio",
+      "planTier": "MEDIUM",
+      "maxVehicles": 10,
+      "maxDevices": 10,
+      "price": 49.9,
+      "createdAt": "2026-01-01T08:00:00.000Z"
+    },
+    {
+      "id": 3,
       "name": "Pro",
       "planTier": "PRO",
-      "maxVehicles": 20,
-      "price": 79.9,
+      "maxVehicles": 25,
+      "maxDevices": 25,
+      "price": 99.9,
+      "createdAt": "2026-01-01T08:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "Empresarial Básico",
+      "planTier": "ENTERPRISE_BASIC",
+      "maxVehicles": 50,
+      "maxDevices": 50,
+      "price": 199.9,
+      "createdAt": "2026-01-01T08:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "name": "Empresarial Pro",
+      "planTier": "ENTERPRISE_PRO",
+      "maxVehicles": 100,
+      "maxDevices": 100,
+      "price": 399.9,
       "createdAt": "2026-01-01T08:00:00.000Z"
     }
   ],
@@ -386,6 +415,14 @@
       "planId": 4,
       "status": "ACTIVE",
       "startDate": "2026-01-01T08:00:00.000Z",
+      "endDate": null
+    },
+    {
+      "id": "SUB-002",
+      "organizationId": "ORG-002",
+      "planId": 1,
+      "status": "ACTIVE",
+      "startDate": "2026-01-03T08:00:00.000Z",
       "endDate": null
     }
   ],

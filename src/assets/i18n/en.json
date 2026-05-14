@@ -1,6 +1,6 @@
 {
   "app": {
-    "brand": "God's Tracker",
+    "brand": "Main Menu",
     "searchVehicle": "Search vehicle",
     "notifications": "notifications",
     "profile": "profile"
@@ -236,6 +236,17 @@
      "generatedAt": "Generated on",
      "downloadReport": "Download report",
      "noReports": "No reports available",
-     "noReportsDesc": "Operational reports are generated automatically each month."
+     "noReportsDesc": "Operational reports are generated automatically each month.",
+     "createReport": "Create Report",
+     "createReportTitle": "Create Operational Report",
+     "selectVehicle": "Select Vehicle",
+     "selectVehiclePlaceholder": "Select a vehicle",
+     "periodStart": "Start Date",
+     "periodEnd": "End Date",
+     "drivingScore": "Driving Score",
+     "summary": "Summary",
+     "create": "Create",
+     "creating": "Creating...",
+     "cancel": "Cancel"
    }
  }

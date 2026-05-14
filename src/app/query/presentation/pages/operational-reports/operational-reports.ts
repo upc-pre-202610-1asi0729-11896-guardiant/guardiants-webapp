@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { environment } from '../../../../../environments/environment';
 import { IamStore } from '../../../../iam/application/iam.store';
@@ -27,7 +28,7 @@ interface Vehicle {
 @Component({
   selector: 'app-operational-reports',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './operational-reports.html',
   styleUrls: ['./operational-reports.css'],
 })
@@ -40,6 +41,16 @@ export class OperationalReports implements OnInit {
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly organizationId = this.iamStore.organizationId;
+
+  // Create report modal properties
+  readonly showCreateModal = signal(false);
+  readonly isCreating = signal(false);
+  readonly selectedVehicleId = signal('');
+  readonly periodStart = signal('');
+  readonly periodEnd = signal('');
+  readonly score = signal<number>(0);
+  readonly totalKm = signal<number>(0);
+  readonly summary = signal('');
 
   readonly vehicleMap = computed(() => {
     const map = new Map<string, Vehicle>();
@@ -92,6 +103,55 @@ Generado por God's Tracker - Sistema de Monitoreo Vehicular
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  }
+
+  openCreateReportModal(): void {
+    this.showCreateModal.set(true);
+    this.resetForm();
+  }
+
+  closeCreateReportModal(): void {
+    this.showCreateModal.set(false);
+    this.resetForm();
+  }
+
+  createReport(): void {
+    if (!this.selectedVehicleId() || !this.periodStart() || !this.periodEnd() || !this.summary()) {
+      return;
+    }
+
+    this.isCreating.set(true);
+
+    const newReport: Omit<DrivingReport, 'id'> = {
+      vehicleId: this.selectedVehicleId(),
+      periodStart: new Date(this.periodStart()).toISOString(),
+      periodEnd: new Date(this.periodEnd()).toISOString(),
+      score: this.score(),
+      totalKm: this.totalKm(),
+      summary: this.summary(),
+      generatedAt: new Date().toISOString(),
+    };
+
+    this.http.post<DrivingReport>(`${environment.apiBaseUrl}/drivingReportView`, newReport).subscribe({
+      next: (createdReport) => {
+        this.reports.update(reports => [...reports, createdReport]);
+        this.closeCreateReportModal();
+        this.isCreating.set(false);
+      },
+      error: (error) => {
+        this.error.set(error?.message ?? 'Error creating report.');
+        this.isCreating.set(false);
+      },
+    });
+  }
+
+  private resetForm(): void {
+    this.selectedVehicleId.set('');
+    this.periodStart.set('');
+    this.periodEnd.set('');
+    this.score.set(0);
+    this.totalKm.set(0);
+    this.summary.set('');
   }
 
   private loadReports(): void {

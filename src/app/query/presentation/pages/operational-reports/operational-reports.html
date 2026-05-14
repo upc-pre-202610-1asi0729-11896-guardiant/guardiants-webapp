@@ -21,6 +21,12 @@
         </div>
       </div>
     </div>
+    <div class="reports-actions">
+      <button type="button" class="create-report-btn" (click)="openCreateReportModal()">
+        <span>+</span>
+        {{ 'operationalReports.createReport' | translate }}
+      </button>
+    </div>
   </div>
 
   <div class="loading-banner" *ngIf="isLoading()">{{ 'common.loading' | translate }}</div>
@@ -70,6 +76,63 @@
       <div class="empty-icon">📊</div>
       <h3>{{ 'operationalReports.noReports' | translate }}</h3>
       <p>{{ 'operationalReports.noReportsDesc' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Create Report Modal -->
+  <div class="modal-overlay" *ngIf="showCreateModal()" (click)="closeCreateReportModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ 'operationalReports.createReportTitle' | translate }}</h2>
+        <button type="button" class="close-btn" (click)="closeCreateReportModal()">×</button>
+      </div>
+
+      <form class="create-report-form" (ngSubmit)="createReport()">
+        <div class="form-group">
+          <label for="vehicleSelect">{{ 'operationalReports.selectVehicle' | translate }}</label>
+          <select id="vehicleSelect" [(ngModel)]="selectedVehicleId" name="vehicleId" required>
+            <option value="">{{ 'operationalReports.selectVehiclePlaceholder' | translate }}</option>
+            <option *ngFor="let vehicle of vehicles()" [value]="vehicle.id">
+              {{ vehicle.plate }} - {{ vehicle.brand }} {{ vehicle.model }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="periodStart">{{ 'operationalReports.periodStart' | translate }}</label>
+            <input type="date" id="periodStart" [(ngModel)]="periodStart" name="periodStart" required>
+          </div>
+          <div class="form-group">
+            <label for="periodEnd">{{ 'operationalReports.periodEnd' | translate }}</label>
+            <input type="date" id="periodEnd" [(ngModel)]="periodEnd" name="periodEnd" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="score">{{ 'operationalReports.drivingScore' | translate }}</label>
+          <input type="number" id="score" [(ngModel)]="score" name="score" min="0" max="100" required>
+        </div>
+
+        <div class="form-group">
+          <label for="totalKm">{{ 'operationalReports.totalKm' | translate }}</label>
+          <input type="number" id="totalKm" [(ngModel)]="totalKm" name="totalKm" min="0" step="0.1" required>
+        </div>
+
+        <div class="form-group">
+          <label for="summary">{{ 'operationalReports.summary' | translate }}</label>
+          <textarea id="summary" [(ngModel)]="summary" name="summary" rows="4" required></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeCreateReportModal()">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button type="submit" class="submit-btn" [disabled]="isCreating()">
+            {{ isCreating() ? ('common.creating' | translate) : ('common.create' | translate) }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </section>

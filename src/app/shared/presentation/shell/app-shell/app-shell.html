@@ -34,15 +34,17 @@
         </a>
       </ng-container>
 
+      <!-- Para ambos roles -->
+      <a class="sidebar-item" routerLink="/subscriptions" routerLinkActive="is-active">
+        <span class="sidebar-icon">$</span>
+        <span class="sidebar-label">{{ 'nav.subscriptions' | translate }}</span>
+      </a>
+
       <!-- Solo para empresas (roleId = 2) -->
       <ng-container *ngIf="userRoleId() === 2">
         <a class="sidebar-item" routerLink="/operational-reports" routerLinkActive="is-active">
           <span class="sidebar-icon">📊</span>
           <span class="sidebar-label">{{ 'nav.operationalReports' | translate }}</span>
-        </a>
-        <a class="sidebar-item" routerLink="/subscriptions" routerLinkActive="is-active">
-          <span class="sidebar-icon">$</span>
-          <span class="sidebar-label">{{ 'nav.subscriptions' | translate }}</span>
         </a>
       </ng-container>
     </nav>
