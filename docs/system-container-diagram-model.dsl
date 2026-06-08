@@ -1,4 +1,4 @@
-workspace "GuardiAnts System" "Software Architecture Container Diagram" {
+workspace "GOD's TRACKER System" "Software Architecture Container Diagram" {
 
   model {
 

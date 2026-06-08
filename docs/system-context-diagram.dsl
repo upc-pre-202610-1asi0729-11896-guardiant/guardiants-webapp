@@ -1,4 +1,4 @@
-workspace "GuardiAnts System" "Software Architecture Context Diagram" {
+workspace "GOD's TRACKER System" "Software Architecture Context Diagram" {
 
   model {
     owner = person "Individual Owner" "Tracks vehicle location, security status, and receives alerts."
