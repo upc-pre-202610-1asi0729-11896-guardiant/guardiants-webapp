@@ -1,25 +1,20 @@
-workspace "GuardiAnts System" "System Context Diagram - Web Fleet Management" {
+workspace "GuardiAnts System" "Software Architecture Context Diagram" {
 
   model {
-    // Personas
     owner = person "Individual Owner" "Tracks vehicle location, security status, and receives alerts."
     admin = person "Fleet Administrator" "Manages fleet telemetry, route deviations, and operational reports."
 
-    // Sistema Principal
     guardiants = softwareSystem "GuardiAnts" "Web platform for real-time vehicle security, IoT telemetry, and fleet analytics."
 
-    // 5 Sistemas Externos
     iotDevice = softwareSystem "IoT Device (Hardware)" "Embedded hardware transmitting telemetry data." "External"
     mapService = softwareSystem "OpenStreetMap (via Leaflet)" "Free map rendering and geocoding services." "External"
     pushService = softwareSystem "Firebase (FCM)" "Infrastructure for real-time security alerts." "External"
     authProvider = softwareSystem "Identity Service" "Internal module for JWT and session management."
     paymentGateway = softwareSystem "Stripe API" "External service for subscription billing." "External"
 
-    // Relaciones con especificidad de negocio
     owner -> guardiants "Monitors location and triggers emergency lockdown via"
     admin -> guardiants "Analyzes fleet driving habits and generates reports via"
 
-    // Interacciones técnicas
     guardiants -> mapService "Requests map tiles and location data" "HTTPS"
     guardiants -> pushService "Delivers security alerts and notifications" "HTTPS/FCM"
     iotDevice -> guardiants "Streams telemetry (GPS, engine data, battery)" "MQTT/TLS"
