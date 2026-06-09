@@ -1,4 +1,4 @@
-workspace "GuardiAnts System" "Component Diagram - SPA Bounded Contexts" {
+workspace "GOD's TRACKER System" "Component Diagram - SPA Bounded Contexts" {
 
   model {
     godstracker = softwareSystem "GOD's TRACKER" "Main system" {
