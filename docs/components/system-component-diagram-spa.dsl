@@ -15,14 +15,14 @@ workspace "GOD's TRACKER System" "Component Diagram - SPA Bounded Contexts" {
         query = component "Query Context" "Handles complex searches, filtering, and data retrieval for history"
       }
     }
-
-    identity -> frontendShared "Uses shared components / Extends BaseAPI"
-    billing -> frontendShared "Uses shared components / Extends BaseAPI"
     fleet -> frontendShared "Uses shared components / Extends BaseAPI"
     telemetry -> frontendShared "Uses shared components / Extends BaseAPI"
     alerting -> frontendShared "Uses shared components / Extends BaseAPI"
     commands -> frontendShared "Uses shared components / Extends BaseAPI"
     query -> frontendShared "Uses shared components / Extends BaseAPI"
+    identity -> frontendShared "Uses shared components / Extends BaseAPI"
+    billing -> frontendShared "Uses shared components / Extends BaseAPI"
+
   }
 
   views {
