@@ -5,10 +5,10 @@
 
             billingContext = container "Billing" "Angular Module for Subscription & Payments" {
 
-                interfacesLayer = component "Interfaces Layer" "Angular Components. Subscription plans, Payment methods, Invoice history."
-                appLayer = component "Application Layer" "Angular Services. Orchestrates checkout flows and payment processing logic."
-                domainLayer = component "Domain Layer" "TypeScript Models. Subscription, Invoice, PaymentMethod entities."
-                infraLayer = component "Infrastructure Layer" "Angular HttpClient. API client for Billing/Stripe endpoints."
+                interfacesLayer = component "Interfaces" "Angular Components. Subscription plans, Payment methods, Invoice history."
+                appLayer = component "Application" "Angular Services. Orchestrates checkout flows and payment processing logic."
+                domainLayer = component "Domain" "TypeScript Models. Subscription, Invoice, PaymentMethod entities."
+                infraLayer = component "Infrastructure" "Angular HttpClient. API client for Billing/Stripe endpoints."
 
                 interfacesLayer -> appLayer "Calls"
                 appLayer -> domainLayer "Execute suscription rules"
