@@ -1,7 +1,7 @@
 workspace "GuardiAnts System" "Component Diagram - Identity Context" {
 
     model {
-        guardiants = softwareSystem "GOD's TRACKER" {
+        godstracker = softwareSystem "GOD's TRACKER" {
 
             identityAccess = container "Identity Bounded Context" "Angular Module for Auth & Profile" {
                 presentation = component "Presentation" "Angular Components. Login, Register and Profile views."
