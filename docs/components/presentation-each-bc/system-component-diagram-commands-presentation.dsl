@@ -1,48 +1,27 @@
-
-workspace "system-component-diagram-commands-presentation.dsl" "Description of system-component-diagram-commands-presentation.dsl" {
+  workspace "GuardiAnts System" "Component Diagram - Commands Presentation" {
 
     model {
-        user = person "User" "A user of the system"
+        godstracker = softwareSystem "GOD's TRACKER" {
 
-        softwareSystem = softwareSystem "system-component-diagram-commands-presentation.dsl" "Description" {
-            webApp = co ntainer "Web Application" "Delivers the UI" "Technology"
-            api = c o ntainer "API" "Provides functionality via API" "Technology"
-            database = c o ntainer "Database" "Stores data" "Technology" "Database"
+            commandsPresentation = container "Commands Presentation" "Angular Module for Remote Vehicle Actions User Interface" {
+                ccomponents = component "Components" "Angular Components. Engine lock switches, horn buttons, action validation popups."
+                cviews = component "Views" "Angular Views. Control terminal view, execution response and log panels."
 
-            webApp -> api "Uses"
-            api -> d at abase "Reads from and writes to"
+                cviews -> ccomponents "Composed of / Uses"
+            }
         }
-
-        user -> s of twareSystem "Uses"
     }
 
     views {
-        systemContext softwareSystem "SystemContext" {
+        component commandsPresentation {
             include *
-            autoLayout
-        }
-
-        container softwareSystem "Containers" {
-            include *
-            autoLayout
+            autoLayout lr
         }
 
         styles {
-            element "Person" {
-                shape Person
-                background #08427B
+            element "Component" {
+                background #17a2b8
                 color #ffffff
-            }
-            element "Software System" {
-                background #1168BD
-                color #ffffff
-            }
-            element "Container" {
-                background #438DD5
-                color #ffffff
-            }
-            element "Database" {
-                shape Cylinder
             }
         }
     }

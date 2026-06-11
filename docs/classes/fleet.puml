@@ -1,0 +1,94 @@
+@startuml
+package "app" {
+
+  package "fleet" {
+    package "fleet.domain.model" {
+      class Fleet <<Entity>> {
+        +name: string
+        +getName(): string
+        +setName(name: string): void
+      }
+      class Vehicle <<Entity>> {
+        +plate: string
+        +fleet: Fleet
+        +getPlate(): string
+        +setPlate(plate: string): void
+        +getFleet(): Fleet
+        +setFleet(fleet: Fleet): void
+      }
+      Fleet "1" <|-- "*" Vehicle : contains
+    }
+
+    package "fleet.infrastructure" {
+      class FleetsApiEndpoint {
+        // Inherits methods from BaseApiEndpoint
+      }
+      class VehiclesApiEndpoint {
+        // Inherits methods from BaseApiEndpoint
+      }
+      class FleetApi {
+        -vehiclesEndpoint: VehiclesApiEndpoint
+        -fleetsEndpoint: FleetsApiEndpoint
+        +getVehicles(): Observable<Vehicle[]>
+        +getVehicle(id: number): Observable<Vehicle>
+        +createVehicle(vehicle: Vehicle): Observable<Vehicle>
+      }
+      class FleetAssembler <<Assembler>> {
+        +toEntitiesFromResponse(response: FleetsResponse): Fleet[]
+        +toEntityFromResource(resource: FleetResource): Fleet
+        +toResourceFromEntity(entity: Fleet): FleetResource
+      }
+      class VehicleAssembler <<Assembler>> {
+        +toEntitiesFromResponse(response: VehiclesResponse): Vehicle[]
+        +toEntityFromResource(resource: VehicleResource): Vehicle
+        +toResourceFromEntity(entity: Vehicle): VehicleResource
+      }
+
+      FleetAssembler --|> app.shared.infrastructure.BaseAssembler : implements
+      VehicleAssembler --|> app.shared.infrastructure.BaseAssembler : implements
+      FleetAssembler --> Fleet : converts to/from
+      VehicleAssembler --> Vehicle : converts to/from
+      FleetsApiEndpoint --> FleetAssembler : uses for conversion
+      VehiclesApiEndpoint --> VehicleAssembler : uses for conversion
+      FleetsApiEndpoint --|> app.shared.infrastructure.BaseApiEndpoint : extends
+      VehiclesApiEndpoint --|> app.shared.infrastructure.BaseApiEndpoint : extends
+      FleetApi --|> app.shared.infrastructure.BaseApi : extends
+      FleetApi --> VehiclesApiEndpoint : delegates to
+      FleetApi --> FleetsApiEndpoint : delegates to
+    }
+
+    package "fleet.application" {
+      class FleetStore <<Store>> {
+        +fleets: Fleet[]
+        +vehicles: Vehicle[]
+        +getFleets(): Fleet[]
+        +getVehicles(): Vehicle[]
+        +addFleet(fleet: Fleet): void
+        +addVehicle(vehicle: Vehicle): void
+        +updateVehicle(vehicle: Vehicle): void
+        +removeVehicle(vehicleId: string): void
+      }
+      FleetStore --> Fleet : manages
+      FleetStore --> Vehicle : manages
+    }
+
+    package "fleet.presentation.views" {
+      class VehicleForm <<Component>> {
+        +store: FleetStore
+        +isEdit: boolean
+        +vehicleId: number | null
+        +submit(): void
+      }
+      class VehicleList <<Component>> {
+        +store: FleetStore
+        +displayedColumns: string[]
+        +editVehicle(id: number): void
+        +deleteVehicle(id: number): void
+        +navigateToNew(): void
+      }
+      VehicleForm ..> FleetStore : uses
+      VehicleList ..> FleetStore : uses
+    }
+  }
+}
+@enduml
