@@ -36,6 +36,7 @@ workspace "GOD's TRACKER System" "Component Diagram - SPA Bounded Contexts" {
         background #ff9900
         color #ffffff
       }
+
     }
   }
 }
