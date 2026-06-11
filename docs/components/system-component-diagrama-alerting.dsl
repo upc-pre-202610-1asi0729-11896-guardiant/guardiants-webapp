@@ -1,7 +1,7 @@
   workspace "GuardiAnts System" "Component Diagram - Alerting Context" {
 
     model {
-        guardiants = softwareSystem "GOD's TRACKER" {
+        godstracker = softwareSystem "GOD's TRACKER" {
 
             // Contexto Alerting en el Frontend (Angular)
             alertingContext = container "Alerting Context" "Angular Module for Security Notifications" {

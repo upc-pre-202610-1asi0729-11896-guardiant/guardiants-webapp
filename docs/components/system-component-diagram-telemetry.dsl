@@ -1,7 +1,7 @@
   workspace "GuardiAnts System" "Component Diagram - Telemetry Context" {
 
     model {
-        guardiants = softwareSystem "GOD's TRACKER" {
+        godstracker = softwareSystem "GOD's TRACKER" {
 
             telemetryContext = container "Telemetry" "Angular Module for Real-time Telemetry" {
 

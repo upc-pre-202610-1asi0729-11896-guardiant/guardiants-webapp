@@ -1,14 +1,14 @@
-  workspace "GuardiAnts System" "Component Diagram - Commands Context (Clean Architecture)" {
+  workspace "GuardiAnts System" "Component Diagram - Commands Context" {
 
     model {
-        guardiants = softwareSystem "GOD's TRACKER" {
+        godstracker = softwareSystem "GOD's TRACKER" {
 
-            commandsContext = container "Commands Context" "Angular Module for Remote Vehicle Control" {
+            commandsContext = container "Commands" "Angular Module for Remote Vehicle Control" {
 
-                interfacesLayer = component "Interfaces Layer" "Angular Components & Forms (UI)"
-                appLayer = component "Application Layer" "Angular Services (Orchestrators)"
-                domainLayer = component "Domain Layer" "TypeScript Models & Logic. Vehicle Command Aggregates & Validation Rules."
-                infraLayer = component "Infrastructure Layer" "Angular HttpClient. API client for Command endpoints."
+                interfacesLayer = component "Interfaces" "Angular Components & Forms (UI)"
+                appLayer = component "Application" "Angular Services (Orchestrators)"
+                domainLayer = component "Domain" "TypeScript Models & Logic. Vehicle Command Aggregates & Validation Rules."
+                infraLayer = component "Infrastructure" "Angular HttpClient. API client for Command endpoints."
 
                 interfacesLayer -> appLayer "Calls"
                 appLayer -> domainLayer "Executes Business Logic / Validation"

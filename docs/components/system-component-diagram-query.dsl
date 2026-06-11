@@ -1,7 +1,7 @@
   workspace "GuardiAnts System" "Component Diagram - Query Context" {
 
     model {
-        guardiants = softwareSystem "GOD's TRACKER" {
+        godstracker = softwareSystem "GOD's TRACKER" {
 
             queryContext = container "Query" "Angular Module for Advanced Search & Reporting" {
 
