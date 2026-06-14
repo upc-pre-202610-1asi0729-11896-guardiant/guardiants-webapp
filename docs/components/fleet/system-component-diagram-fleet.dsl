@@ -33,7 +33,7 @@ workspace "GuardiAnts System" "Component Diagram - Fleet Context" {
 
         styles {
             element "Component" {
-                background #438dd5
+                background #3F1459FF
                 color #ffffff
             }
         }
