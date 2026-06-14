@@ -2,7 +2,7 @@
 package "app" {
 
   package "fleet" {
-    package "fleet.domain.model" {
+    package "domain.model" {
       class Fleet <<Entity>> {
         +name: string
         +getName(): string
@@ -19,7 +19,7 @@ package "app" {
       Fleet "1" <|-- "*" Vehicle : contains
     }
 
-    package "fleet.infrastructure" {
+    package "infrastructure" {
       class FleetsApiEndpoint {
         // Inherits methods from BaseApiEndpoint
       }
@@ -57,7 +57,7 @@ package "app" {
       FleetApi --> FleetsApiEndpoint : delegates to
     }
 
-    package "fleet.application" {
+    package "application" {
       class FleetStore <<Store>> {
         +fleets: Fleet[]
         +vehicles: Vehicle[]
@@ -72,7 +72,7 @@ package "app" {
       FleetStore --> Vehicle : manages
     }
 
-    package "fleet.presentation.views" {
+    package "presentation.views" {
       class VehicleForm <<Component>> {
         +store: FleetStore
         +isEdit: boolean

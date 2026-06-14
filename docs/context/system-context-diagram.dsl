@@ -24,14 +24,14 @@ workspace "GOD's TRACKER System" "Software Architecture Context Diagram" {
   }
 
   views {
-    systemContext guardiants "ContextView" {
+    systemContext godstracker "ContextView" {
       include *
       autoLayout
     }
 
     styles {
       element "Software System" {
-        background #1168bd
+        background #8c11bd
         color #ffffff
       }
       element "External" {
@@ -40,7 +40,7 @@ workspace "GOD's TRACKER System" "Software Architecture Context Diagram" {
       }
       element "Person" {
         shape Person
-        background #08427b
+        background #08177b
         color #ffffff
       }
     }
