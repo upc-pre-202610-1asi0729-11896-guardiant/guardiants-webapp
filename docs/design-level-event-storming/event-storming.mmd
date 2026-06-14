@@ -1,0 +1,373 @@
+flowchart TB
+
+  subgraph IAM["Identity & Access Management (iam)"]
+    direction LR
+    iam_visitor["Visitor"]:::actor
+    iam_landing["Landing Page"]:::ui
+    iam_register_cmd["Register Account (select profile type: Natural Person / Company / Government)"]:::command
+    iam_account["Account"]:::aggregate
+    iam_account_registered(["AccountRegistered"]):::event
+
+    iam_verify_cmd["Verify Email"]:::command
+    iam_email_verified(["EmailVerified"]):::event
+
+    iam_login_cmd["Authenticate (JWT Login)"]:::command
+    iam_user["User"]:::aggregate
+    iam_session_started(["SessionStarted"]):::event
+    iam_auth_failed(["AuthenticationFailed"]):::event
+
+    iam_change_pw_cmd["Change Password"]:::command
+    iam_pw_updated(["PasswordUpdated"]):::event
+
+    iam_update_profile_cmd["Update Profile"]:::command
+    iam_profile_updated(["ProfileUpdated"]):::event
+
+    iam_change_lang_theme_cmd["Change Language / Theme Preferences"]:::command
+    iam_preferences_updated(["UserPreferencesUpdated"]):::event
+
+    iam_logout_cmd["Logout"]:::command
+    iam_session_closed(["SessionClosed"]):::event
+    iam_session_expired(["SessionExpired"]):::event
+
+    iam_dashboard["Dashboard"]:::readmodel
+
+    iam_visitor --> iam_landing --> iam_register_cmd --> iam_account --> iam_account_registered
+    iam_account_registered -.-> iam_verify_cmd --> iam_email_verified
+    iam_email_verified -.-> iam_login_cmd
+    iam_login_cmd --> iam_user --> iam_session_started --> iam_dashboard
+    iam_login_cmd --> iam_auth_failed
+
+    iam_dashboard -.-> iam_change_pw_cmd --> iam_pw_updated
+    iam_dashboard -.-> iam_update_profile_cmd --> iam_profile_updated
+    iam_dashboard -.-> iam_change_lang_theme_cmd --> iam_preferences_updated
+    iam_dashboard -.-> iam_logout_cmd --> iam_session_closed
+    iam_session_started -.-> iam_session_expired
+  end
+
+  subgraph FLEET["Fleet Management (fleet)"]
+    direction LR
+    fleet_supervisor["Fleet Supervisor"]:::actor
+
+    fleet_create_cmd["Create Fleet"]:::command
+    fleet_aggregate["Fleet"]:::aggregate
+    fleet_created(["FleetCreated"]):::event
+
+    fleet_register_vehicle_cmd["Register Vehicle (plate, model, fleet)"]:::command
+    fleet_vehicle["Vehicle (Asset)"]:::aggregate
+    fleet_vehicle_registered(["VehicleRegistered"]):::event
+
+    fleet_update_vehicle_cmd["Edit Vehicle"]:::command
+    fleet_vehicle_updated(["VehicleUpdated"]):::event
+
+    fleet_deactivate_vehicle_cmd["Deactivate Vehicle"]:::command
+    fleet_vehicle_deactivated(["VehicleDeactivated"]):::event
+
+    fleet_assign_device_cmd["Assign IoT Device to Vehicle"]:::command
+    fleet_device_assignment["DeviceAssignment"]:::aggregate
+    fleet_device_assigned(["IoTDeviceAssigned"]):::event
+    fleet_device_already_assigned(["DeviceAlreadyAssignedWarningRaised"]):::event
+
+    fleet_unassign_device_cmd["Unassign IoT Device"]:::command
+    fleet_device_unassigned(["IoTDeviceUnassigned"]):::event
+
+    fleet_configure_alert_cmd["Configure Fleet Alert Rule (geofence, speed, GPS jamming)"]:::command
+    fleet_alert_rule["AlertRule"]:::aggregate
+    fleet_alert_rule_configured(["FleetAlertRuleConfigured"]):::event
+    fleet_alert_rule_updated(["FleetAlertRuleUpdated"]):::event
+
+    fleet_search_cmd["Search Vehicle (name / plate)"]:::command
+    fleet_search_no_match(["NoVehicleMatchFound"]):::event
+
+    fleet_request_report_cmd["Request Operational Report (date range)"]:::command
+    fleet_driving_report["DrivingReport"]:::aggregate
+    fleet_driving_report_generated(["DrivingReportGenerated"]):::event
+
+    fleet_panel["Fleet Overview Panel\n(US10, US11)"]:::readmodel
+    fleet_reports_panel["Operational Reports & Driving Behavior Panel\n(US14, US15)"]:::readmodel
+
+    fleet_supervisor --> fleet_create_cmd --> fleet_aggregate --> fleet_created
+    fleet_created -.-> fleet_register_vehicle_cmd
+    fleet_register_vehicle_cmd --> fleet_vehicle --> fleet_vehicle_registered
+    fleet_vehicle_registered -.-> fleet_update_vehicle_cmd --> fleet_vehicle_updated
+    fleet_vehicle_registered -.-> fleet_deactivate_vehicle_cmd --> fleet_vehicle_deactivated
+
+    fleet_vehicle_registered -.-> fleet_assign_device_cmd
+    fleet_assign_device_cmd --> fleet_device_assignment --> fleet_device_assigned
+    fleet_assign_device_cmd --> fleet_device_already_assigned
+    fleet_device_assigned -.-> fleet_unassign_device_cmd --> fleet_device_unassigned
+
+    fleet_vehicle_registered -.-> fleet_configure_alert_cmd
+    fleet_configure_alert_cmd --> fleet_alert_rule --> fleet_alert_rule_configured
+    fleet_alert_rule_configured -.-> fleet_alert_rule_updated
+
+    fleet_created --> fleet_panel
+    fleet_vehicle_registered --> fleet_panel
+    fleet_vehicle_updated --> fleet_panel
+    fleet_vehicle_deactivated --> fleet_panel
+    fleet_device_assigned --> fleet_panel
+    fleet_device_unassigned --> fleet_panel
+    fleet_panel --> fleet_search_cmd
+    fleet_search_cmd --> fleet_search_no_match
+
+    fleet_panel -.-> fleet_request_report_cmd
+    fleet_request_report_cmd --> fleet_driving_report --> fleet_driving_report_generated --> fleet_reports_panel
+  end
+
+  subgraph SUBSCRIPTION["Subscriptions & Billing (subscription)"]
+    direction LR
+    sub_authenticated_user["Authenticated User"]:::actor
+    sub_plans_screen["Plans Screen"]:::ui
+    sub_select_plan_cmd["Select Plan (Basic / Pro / ...)"]:::command
+    sub_subscription["Subscription"]:::aggregate
+    sub_plan_selected(["PlanSelected"]):::event
+
+    sub_stripe["Stripe"]:::external
+    sub_process_payment_cmd["Process Payment"]:::command
+    sub_payment_succeeded(["PaymentSucceeded"]):::event
+    sub_activate_account_cmd["Activate Subscription"]:::command
+    sub_subscription_activated(["SubscriptionActivated"]):::event
+
+    sub_payment_failed(["PaymentFailed"]):::event
+    sub_notify_user_cmd["Notify User of Failed Payment"]:::command
+    sub_notification_sent(["PaymentFailureNotified"]):::event
+    sub_suspend_cmd["Suspend Subscription"]:::command
+    sub_subscription_suspended(["SubscriptionSuspended"]):::event
+
+    sub_renew_cmd["Renew Subscription"]:::command
+    sub_subscription_renewed(["SubscriptionRenewed"]):::event
+    sub_subscription_expired(["SubscriptionExpired"]):::event
+
+    sub_update_plan_cmd["Update / Upgrade Plan"]:::command
+    sub_plan_updated(["PlanUpdated"]):::event
+
+    sub_panel["Plan & Device Status Panel\n(US36)"]:::readmodel
+
+    sub_authenticated_user --> sub_plans_screen --> sub_select_plan_cmd --> sub_subscription --> sub_plan_selected
+    sub_plan_selected -.-> sub_process_payment_cmd
+    sub_stripe --> sub_process_payment_cmd
+    sub_process_payment_cmd --> sub_payment_succeeded --> sub_activate_account_cmd --> sub_subscription_activated
+    sub_process_payment_cmd --> sub_payment_failed --> sub_notify_user_cmd --> sub_notification_sent
+    sub_notification_sent -.-> sub_suspend_cmd --> sub_subscription_suspended
+
+    sub_subscription_activated -.-> sub_subscription_expired
+    sub_subscription_expired -.-> sub_renew_cmd --> sub_subscription_renewed
+    sub_subscription_activated -.-> sub_update_plan_cmd --> sub_plan_updated
+
+    sub_subscription_activated --> sub_panel
+    sub_subscription_renewed --> sub_panel
+    sub_subscription_suspended --> sub_panel
+    sub_subscription_expired --> sub_panel
+    sub_plan_updated --> sub_panel
+  end
+
+  subgraph TELEMETRY["Telemetry (telemetry)"]
+    direction LR
+    tel_device["IoT Device (hardware)"]:::external
+    tel_gateway["IoT Gateway (EMQX MQTT)"]:::external
+    tel_publish_cmd["Publish Telemetry (MQTT)"]:::command
+
+    tel_ingest_cmd["Ingest Telemetry Point\n(TS38: POST /telemetry)"]:::command
+    tel_telemetry_point["TelemetryPoint"]:::aggregate
+    tel_point_registered(["TelemetryPointRegistered"]):::event
+    tel_invalid_payload(["InvalidTelemetryPayloadRejected"]):::event
+
+    tel_update_status_cmd["Update vehicle_status_view"]:::command
+    tel_location_realtime["Live Tracking View\n(TS39: GET /vehicles/{id}/location)"]:::readmodel
+    tel_vehicle_general_status(["VehicleGeneralStatusUpdated"]):::event
+
+    tel_route_deviation(["RouteDeviationDetected"]):::event
+    tel_prolonged_stop(["ProlongedStopDetected"]):::event
+    tel_stop_resolved(["ProlongedStopResolved"]):::event
+    tel_gps_signal_lost(["GPSSignalLost / InterferenceDetected (Jammer)"]):::event
+    tel_geofence_exit(["GeofenceExitDetected"]):::event
+    tel_device_reconnected(["DeviceConnectionRestored"]):::event
+
+    tel_query_history_cmd["Query Route History (by date)\n(US03)"]:::command
+    tel_route_history["Route History View"]:::readmodel
+
+    tel_device --> tel_gateway --> tel_publish_cmd --> tel_ingest_cmd
+    tel_ingest_cmd --> tel_telemetry_point --> tel_point_registered
+    tel_ingest_cmd --> tel_invalid_payload
+
+    tel_point_registered --> tel_update_status_cmd --> tel_location_realtime --> tel_vehicle_general_status
+
+    tel_point_registered -.-> tel_route_deviation
+    tel_point_registered -.-> tel_prolonged_stop
+    tel_prolonged_stop -.-> tel_stop_resolved
+    tel_point_registered -.-> tel_gps_signal_lost
+    tel_point_registered -.-> tel_geofence_exit
+    tel_point_registered -.-> tel_device_reconnected
+
+    tel_route_deviation --> tel_location_realtime
+    tel_prolonged_stop --> tel_location_realtime
+    tel_stop_resolved --> tel_location_realtime
+    tel_gps_signal_lost --> tel_location_realtime
+    tel_device_reconnected --> tel_location_realtime
+
+    tel_point_registered --> tel_query_history_cmd --> tel_route_history
+  end
+
+  subgraph ALERTING["Security & Alerting (alerting)"]
+    direction LR
+    alert_person["Natural Person"]:::actor
+
+    alert_configure_geofence_cmd["Configure Geofence"]:::command
+    alert_rule_geofence["AlertRule (Geofence)"]:::aggregate
+    alert_geofence_configured(["GeofenceConfigured"]):::event
+    alert_geofence_updated(["GeofenceUpdated"]):::event
+
+    alert_configure_security_options_cmd["Configure Security Options\n(suspicious movement, engine shutdown, auto-safe mode)"]:::command
+    alert_security_options_configured(["SecurityOptionsConfigured"]):::event
+
+    alert_configure_notifications_cmd["Configure Notification Preferences"]:::command
+    alert_notification_prefs_updated(["NotificationPreferencesUpdated"]):::event
+
+    alert_evaluate_rules_cmd["Evaluate Active Rules"]:::command
+    alert_rule_engine["RuleEngine"]:::aggregate
+    alert_rule_violated(["AlertRuleViolated (suspicious movement / GPS spoofing / speed exceeded / deviation / prolonged stop)"]):::event
+    alert_no_violation(["NoViolationFound"]):::event
+
+    alert_generate_cmd["Generate Security Alert\n(TS40: POST /alerts)"]:::command
+    alert_critical_generated(["SecurityAlertGenerated"]):::event
+    alert_send_push_cmd["Send Push Notification"]:::command
+
+    alert_push_provider["Push Provider (FCM/APNs)"]:::external
+    alert_push_sent(["PushNotificationSent"]):::event
+    alert_push_suppressed(["PushNotificationSuppressedByPreferences"]):::event
+
+    alert_filter_cmd["Filter Alerts (type: All/Unread/Urgent; period)\n(US27)"]:::command
+    alert_view_detail_cmd["View Alert Detail\n(US28)"]:::command
+
+    alert_acknowledge_cmd["Acknowledge / Read Alert"]:::command
+    alert_acknowledged(["AlertAcknowledged"]):::event
+    alert_close_cmd["Close Alert"]:::command
+    alert_closed(["AlertClosed"]):::event
+
+    alert_activate_defense_cmd["Activate Automatic Defense (Active Defense Protocol)"]:::command
+    alert_defense_activated(["AutomaticDefenseActivated"]):::event
+    alert_defense_result_logged(["DefenseActionLogged (type, result, timestamp)"]):::event
+    alert_deactivate_defense_cmd["Deactivate Automatic Defense"]:::command
+    alert_defense_deactivated(["AutomaticDefenseDeactivated"]):::event
+
+    alert_daily_panel["Daily Alerts Panel\n(US26, US27)"]:::readmodel
+    alert_detail["Alert Detail View\n(US28)"]:::readmodel
+
+    alert_person --> alert_configure_geofence_cmd --> alert_rule_geofence --> alert_geofence_configured
+    alert_geofence_configured -.-> alert_configure_geofence_cmd
+    alert_configure_geofence_cmd -.-> alert_geofence_updated
+
+    alert_person --> alert_configure_security_options_cmd --> alert_security_options_configured
+    alert_person --> alert_configure_notifications_cmd --> alert_notification_prefs_updated
+
+    alert_geofence_configured -.-> alert_evaluate_rules_cmd
+    tel_geofence_exit -.-> alert_evaluate_rules_cmd
+    tel_route_deviation -.-> alert_evaluate_rules_cmd
+    tel_prolonged_stop -.-> alert_evaluate_rules_cmd
+    tel_gps_signal_lost -.-> alert_evaluate_rules_cmd
+
+    alert_evaluate_rules_cmd --> alert_rule_engine
+    alert_rule_engine --> alert_rule_violated
+    alert_rule_engine --> alert_no_violation
+    alert_no_violation --> alert_daily_panel
+
+    alert_rule_violated -.-> alert_generate_cmd
+    alert_generate_cmd --> alert_critical_generated --> alert_send_push_cmd
+
+    alert_notification_prefs_updated -.-> alert_send_push_cmd
+    alert_send_push_cmd --> alert_push_sent
+    alert_send_push_cmd --> alert_push_suppressed
+    alert_push_provider --> alert_push_sent
+
+    alert_critical_generated -.-> alert_security_options_configured
+    alert_security_options_configured -.-> alert_activate_defense_cmd
+    alert_activate_defense_cmd --> alert_defense_activated --> alert_defense_result_logged
+    alert_defense_activated -.-> alert_deactivate_defense_cmd --> alert_defense_deactivated
+
+    alert_daily_panel --> alert_filter_cmd --> alert_daily_panel
+    alert_daily_panel --> alert_view_detail_cmd --> alert_detail
+    alert_detail -.-> alert_acknowledge_cmd --> alert_acknowledged
+    alert_acknowledged -.-> alert_close_cmd --> alert_closed
+
+    alert_critical_generated --> alert_daily_panel
+    alert_critical_generated --> alert_detail
+    alert_acknowledged --> alert_detail
+    alert_closed --> alert_detail
+    alert_defense_result_logged --> alert_detail
+    alert_defense_deactivated --> alert_detail
+  end
+
+  subgraph COMMANDS["Security Commands - Remote Control (commands)"]
+    direction LR
+    cmd_user["User (mobile app / web)"]:::actor
+
+    cmd_block_engine["Block Vehicle Engine\n(US07, US19: from Dashboard / Quick Actions / Fleet Panel)"]:::command
+    cmd_aggregate["Command"]:::aggregate
+    cmd_issued(["EngineBlockCommandIssued"]):::event
+
+    cmd_gateway["Telemetry Gateway (MQTT)"]:::external
+    cmd_dispatched(["CommandDispatchedToDevice"]):::event
+
+    cmd_device["IoT Device"]:::external
+    cmd_ack_received(["CommandAckReceived"]):::event
+    cmd_engine_blocked(["EngineBlocked"]):::event
+    cmd_command_logged(["CommandExecutionLogged (status, result, timestamp)\n(US19)"]):::event
+
+    cmd_restart_device_cmd["Restart IoT Device\n(US34)"]:::command
+    cmd_restart_issued(["DeviceRestartCommandIssued"]):::event
+    cmd_device_restarted(["DeviceRestarted"]):::event
+
+    cmd_report_theft_cmd["Report Theft from App (Quick Action)\n(US08)"]:::command
+    cmd_theft_reported(["TheftReportRegistered"]):::event
+    cmd_emergency_protocol(["EmergencyProtocolActivated"]):::event
+
+    cmd_share_location_cmd["Share Vehicle Location (Quick Action)\n(US09)"]:::command
+    cmd_share_link_generated(["LocationShareLinkGenerated"]):::event
+
+    cmd_health_check_cmd["Check Device Health\n(US33: Configuration > Device)"]:::command
+    cmd_health_checked(["DeviceHealthChecked (status, model, IMEI, last connection)"]):::event
+
+    cmd_device_info["Linked IoT Device Info Panel\n(US33)"]:::readmodel
+    cmd_active_incidents["Active Incidents Panel\n(US08)"]:::readmodel
+
+    cmd_user --> cmd_block_engine
+    alert_critical_generated -.-> cmd_block_engine
+    alert_activate_defense_cmd -.-> cmd_block_engine
+
+    cmd_block_engine --> cmd_aggregate --> cmd_issued --> cmd_dispatched
+    cmd_gateway --> cmd_dispatched
+    cmd_dispatched --> cmd_ack_received
+    cmd_device --> cmd_ack_received
+    cmd_ack_received --> cmd_engine_blocked --> cmd_command_logged
+    cmd_engine_blocked --> tel_location_realtime
+
+    cmd_user --> cmd_restart_device_cmd --> cmd_restart_issued --> cmd_dispatched
+    cmd_ack_received -.-> cmd_device_restarted
+    cmd_device_restarted -.-> tel_device_reconnected
+    cmd_device_restarted --> cmd_device_info
+
+    cmd_user --> cmd_report_theft_cmd --> cmd_theft_reported --> cmd_emergency_protocol
+    cmd_theft_reported --> cmd_active_incidents
+    cmd_emergency_protocol -.-> alert_activate_defense_cmd
+    cmd_emergency_protocol -.-> alert_generate_cmd
+
+    cmd_user --> cmd_share_location_cmd --> cmd_share_link_generated
+
+    cmd_user --> cmd_health_check_cmd --> cmd_health_checked --> cmd_device_info
+    cmd_engine_blocked --> cmd_device_info
+    cmd_ack_received --> cmd_device_info
+  end
+
+%% Cross-context integration
+  iam_account_registered -.-> sub_subscription
+  sub_subscription_activated -.-> fleet_aggregate
+  fleet_device_assigned -.-> tel_telemetry_point
+  fleet_alert_rule_configured -.-> alert_rule_engine
+
+  classDef event fill:#FFB17A,stroke:#CC7A30,color:#000,font-weight:bold;
+  classDef command fill:#AECBFA,stroke:#5B8DEF,color:#000;
+  classDef aggregate fill:#FFF59D,stroke:#D4B106,color:#000,font-weight:bold;
+  classDef actor fill:#FFF176,stroke:#D4B106,color:#000;
+  classDef ui fill:#C8E6C9,stroke:#66BB6A,color:#000;
+  classDef readmodel fill:#C8E6C9,stroke:#66BB6A,color:#000;
+  classDef external fill:#F8BBD0,stroke:#E91E8C,color:#000;
+  classDef trigger fill:#E0E0E0,stroke:#9E9E9E,color:#000,stroke-dasharray: 3 3;

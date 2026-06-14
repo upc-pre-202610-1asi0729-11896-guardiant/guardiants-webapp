@@ -33,7 +33,7 @@ workspace "GOD's TRACKER System" "Software Architecture Container Diagram" {
 
     styles {
       element "Container" {
-        background #438dd5
+        background #8c11bd
         color #ffffff
       }
       element "Software System" {
