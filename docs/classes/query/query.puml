@@ -1,0 +1,610 @@
+@startuml
+' GOD's Tracker - Query & Reporting Bounded Context - Class Diagram
+' CQRS read-side BC: projections built from Telemetry, Fleet, and Alerting events.
+' Covers: route history (US03), driving reports (US14/TS45), operational reports (US15),
+' cross-entity search (4.2.4 Searching Systems), and report export.
+
+package "query/domain/model" {
+
+  class RouteHistoryView <<entity>> {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +segments: RouteSegmentSummary[]
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +totalTripsCount: number
+    --
+    +hasData(): boolean
+    +isEmpty(): boolean
+  }
+
+  class RouteSegmentSummary <<value object>> {
+    +segmentId: string
+    +startedAt: string
+    +endedAt: string|null
+    +startLocation: GeoPoint
+    +endLocation: GeoPoint
+    +distanceKm: number
+    +durationMinutes: number
+  }
+
+  class GeoPoint <<value object>> {
+    +lat: number
+    +lng: number
+  }
+
+  class DrivingReportView <<entity>> {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +averageSpeedKmh: number
+    +drivingScore: number
+    +harshBrakingEvents: number
+    +harshAccelerationEvents: number
+    +riskPatterns: RiskPattern[]
+    --
+    +isHighRisk(thresholdScore: number): boolean
+    +hasData(): boolean
+  }
+
+  class RiskPattern <<value object>> {
+    +type: RiskPatternType
+    +occurrences: number
+    +lastDetectedAt: string
+  }
+
+  enum RiskPatternType {
+    HARSH_BRAKING
+    HARSH_ACCELERATION
+    SPEEDING
+    FREQUENT_DEVIATIONS
+  }
+
+  class OperationalReportView <<entity>> {
+    +id: string
+    +fleetId: string
+    +periodStart: string
+    +periodEnd: string
+    +vehicleSummaries: VehicleOperationalSummary[]
+    +totalAlertsCount: number
+    +totalLoansCount: number
+    +generatedAt: string
+    --
+    +hasData(): boolean
+    +exportableSections(): string[]
+  }
+
+  class VehicleOperationalSummary <<value object>> {
+    +vehicleId: string
+    +plate: string
+    +totalDistanceKm: number
+    +totalTripsCount: number
+    +alertsCount: number
+    +loansCount: number
+    +drivingScore: number|null
+  }
+
+  class SearchResult <<value object>> {
+    +entityType: SearchEntityType
+    +entityId: string
+    +label: string
+    +subtitle: string
+    +location: GeoPoint|null
+    +occurredAt: string|null
+  }
+
+  enum SearchEntityType {
+    VEHICLE
+    ROUTE
+    SECURITY_EVENT
+    OPERATIONAL_REPORT
+  }
+
+  class SearchCriteria <<value object>> {
+    +queryText: string
+    +entityTypes: SearchEntityType[]
+    +dateRange: DateRange|null
+    +vehicleStatus: string|null
+    +eventType: string|null
+    +location: GeoPoint|null
+    --
+    +isEmpty(): boolean
+  }
+
+  class DateRange <<value object>> {
+    +startDate: string
+    +endDate: string
+    --
+    +isValid(): boolean
+    +spansDays(): number
+  }
+
+  class ReportExport <<entity>> {
+    +id: string
+    +sourceReportId: string
+    +format: ExportFormat
+    +generatedAt: string
+    +downloadUrl: string
+    --
+    +isReady(): boolean
+  }
+
+  enum ExportFormat {
+    PDF
+    CSV
+  }
+
+  RouteHistoryView "1" o-- "*" RouteSegmentSummary : segments
+  RouteSegmentSummary "1" *-- "1" GeoPoint : startLocation
+  RouteSegmentSummary "1" *-- "1" GeoPoint : endLocation
+  DrivingReportView "1" o-- "*" RiskPattern : riskPatterns
+  RiskPattern "1" *-- "1" RiskPatternType : type
+  OperationalReportView "1" o-- "*" VehicleOperationalSummary : vehicleSummaries
+  SearchResult "1" *-- "1" SearchEntityType : entityType
+  SearchResult "1" --> "0..1" GeoPoint : location
+  SearchCriteria "1" --> "*" SearchEntityType : entityTypes
+  SearchCriteria "1" --> "0..1" DateRange : dateRange
+  ReportExport "1" *-- "1" ExportFormat : format
+}
+
+package "query/infrastructure" {
+
+  ' ===== Resource / Response contracts =====
+
+  interface RouteHistoryResource {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +segments: RouteSegmentResource[]
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +totalTripsCount: number
+  }
+
+  interface RouteSegmentResource {
+    +segmentId: string
+    +startedAt: string
+    +endedAt: string|null
+    +startLat: number
+    +startLng: number
+    +endLat: number
+    +endLng: number
+    +distanceKm: number
+    +durationMinutes: number
+  }
+
+  interface RouteHistoryResponse {
+    +status: string
+    +view: RouteHistoryResource|null
+  }
+
+  interface DrivingReportResource {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +averageSpeedKmh: number
+    +drivingScore: number
+    +harshBrakingEvents: number
+    +harshAccelerationEvents: number
+    +riskPatterns: RiskPatternResource[]
+  }
+
+  interface RiskPatternResource {
+    +type: string
+    +occurrences: number
+    +lastDetectedAt: string
+  }
+
+  interface DrivingReportResponse {
+    +status: string
+    +view: DrivingReportResource|null
+  }
+
+  interface OperationalReportResource {
+    +id: string
+    +fleetId: string
+    +periodStart: string
+    +periodEnd: string
+    +vehicleSummaries: VehicleOperationalSummaryResource[]
+    +totalAlertsCount: number
+    +totalLoansCount: number
+    +generatedAt: string
+  }
+
+  interface VehicleOperationalSummaryResource {
+    +vehicleId: string
+    +plate: string
+    +totalDistanceKm: number
+    +totalTripsCount: number
+    +alertsCount: number
+    +loansCount: number
+    +drivingScore: number|null
+  }
+
+  interface OperationalReportResponse {
+    +status: string
+    +view: OperationalReportResource|null
+  }
+
+  interface SearchResultResource {
+    +entityType: string
+    +entityId: string
+    +label: string
+    +subtitle: string
+    +lat: number|null
+    +lng: number|null
+    +occurredAt: string|null
+  }
+
+  interface SearchResponse {
+    +status: string
+    +results: SearchResultResource[]
+  }
+
+  interface ReportExportResource {
+    +id: string
+    +sourceReportId: string
+    +format: string
+    +generatedAt: string
+    +downloadUrl: string
+  }
+
+  interface ReportExportResponse {
+    +status: string
+    +export: ReportExportResource
+  }
+
+  ' ===== Assemblers (one per resource) =====
+
+  class RouteHistoryAssembler <<assembler>> {
+    +toEntityFromResource(resource: RouteHistoryResource): RouteHistoryView|null
+    +toEntityFromResponse(response: RouteHistoryResponse): RouteHistoryView|null
+  }
+
+  class DrivingReportAssembler <<assembler>> {
+    +toEntityFromResource(resource: DrivingReportResource): DrivingReportView|null
+    +toEntityFromResponse(response: DrivingReportResponse): DrivingReportView|null
+  }
+
+  class OperationalReportAssembler <<assembler>> {
+    +toEntityFromResource(resource: OperationalReportResource): OperationalReportView|null
+    +toEntityFromResponse(response: OperationalReportResponse): OperationalReportView|null
+  }
+
+  class SearchResultAssembler <<assembler>> {
+    +toEntityFromResource(resource: SearchResultResource): SearchResult|null
+    +toEntitiesFromResponse(response: SearchResponse): SearchResult[]
+  }
+
+  class ReportExportAssembler <<assembler>> {
+    +toEntityFromResource(resource: ReportExportResource): ReportExport|null
+    +toEntityFromResponse(response: ReportExportResponse): ReportExport|null
+  }
+
+  ' ===== API (single, multi-endpoint, read-only except export) =====
+
+  class QueryApi <<api>> {
+    -routeHistory: BaseEndpoint
+    -drivingReports: BaseEndpoint
+    -operationalReports: BaseEndpoint
+    -search: BaseEndpoint
+    -exports: BaseEndpoint
+    --
+    +getRouteHistory(vehicleId: string, startDate: string, endDate: string): Promise<RouteHistoryResponse>
+    +getDrivingReport(vehicleId: string, startDate: string, endDate: string): Promise<DrivingReportResponse>
+    +getOperationalReport(fleetId: string, startDate: string, endDate: string): Promise<OperationalReportResponse>
+    +search(criteria: SearchCriteria): Promise<SearchResponse>
+    +exportReport(sourceReportId: string, format: string): Promise<ReportExportResponse>
+  }
+
+  RouteHistoryAssembler ..> RouteHistoryResource : transforms
+  RouteHistoryAssembler ..> RouteSegmentResource : transforms
+  RouteHistoryAssembler ..> RouteHistoryResponse : transforms
+  RouteHistoryAssembler --> RouteHistoryView : creates
+  RouteHistoryAssembler --> RouteSegmentSummary : creates
+  RouteHistoryAssembler --> GeoPoint : creates
+  RouteHistoryAssembler ..> QueryApi : uses
+
+  DrivingReportAssembler ..> DrivingReportResource : transforms
+  DrivingReportAssembler ..> RiskPatternResource : transforms
+  DrivingReportAssembler ..> DrivingReportResponse : transforms
+  DrivingReportAssembler --> DrivingReportView : creates
+  DrivingReportAssembler --> RiskPattern : creates
+  DrivingReportAssembler ..> QueryApi : uses
+
+  OperationalReportAssembler ..> OperationalReportResource : transforms
+  OperationalReportAssembler ..> VehicleOperationalSummaryResource : transforms
+  OperationalReportAssembler ..> OperationalReportResponse : transforms
+  OperationalReportAssembler --> OperationalReportView : creates
+  OperationalReportAssembler --> VehicleOperationalSummary : creates
+  OperationalReportAssembler ..> QueryApi : uses
+
+  SearchResultAssembler ..> SearchResultResource : transforms
+  SearchResultAssembler ..> SearchResponse : transforms
+  SearchResultAssembler --> SearchResult : creates
+  SearchResultAssembler --> GeoPoint : creates
+  SearchResultAssembler ..> QueryApi : uses
+
+  ReportExportAssembler ..> ReportExportResource : transforms
+  ReportExportAssembler ..> ReportExportResponse : transforms
+  ReportExportAssembler --> ReportExport : creates
+  ReportExportAssembler ..> QueryApi : uses
+}
+
+package "shared/infrastructure [stubs]" {
+  class BaseApi <<api>> {
+  }
+  class BaseEndpoint <<api>> {
+  }
+  BaseApi *-- BaseEndpoint
+}
+
+QueryApi --|> BaseApi : extends
+
+package "telemetry [stubs]" {
+  class TelemetryPoint <<entity>> {
+    +vehicleId: string
+    +timestamp: string
+  }
+}
+
+package "fleet [stubs]" {
+  class Vehicle <<entity>> {
+    +id: string
+    +plate: string
+    +fleetId: string
+  }
+  class VehicleLoan <<entity>> {
+    +vehicleId: string
+    +status: string
+  }
+}
+
+package "alerting [stubs]" {
+  class SecurityAlert <<entity>> {
+    +vehicleId: string
+    +type: string
+  }
+}
+
+RouteHistoryAssembler ..> TelemetryPoint : "projects from\n(TelemetryPointRegistered)"
+DrivingReportAssembler ..> TelemetryPoint : "projects from\n(TelemetryPointRegistered)"
+OperationalReportAssembler ..> Vehicle : "projects from\n(VehicleRegistered)"
+OperationalReportAssembler ..> VehicleLoan : "projects from\n(VehicleAssignedToPersonnel)"
+OperationalReportAssembler ..> SecurityAlert : "projects from\n(SecurityAlertGenerated)"
+SearchResultAssembler ..> Vehicle : "indexes"
+SearchResultAssembler ..> TelemetryPoint : "indexes"
+SearchResultAssembler ..> SecurityAlert : "indexes"
+
+package "query/application" {
+
+  class useQueryStore <<store>> {
+    -- state --
+    +routeHistory: RouteHistoryView|null
+    +drivingReport: DrivingReportView|null
+    +operationalReport: OperationalReportView|null
+    +searchResults: SearchResult[]
+    +searchCriteria: SearchCriteria
+    +selectedDateRange: DateRange|null
+    +pendingExport: ReportExport|null
+    +loading: boolean
+    +errors: Error[]
+    -- computed --
+    +hasRouteHistory: boolean
+    +hasDrivingReport: boolean
+    +hasOperationalReport: boolean
+    +searchHasNoResults: boolean
+    +groupedSearchResults: Record<string, SearchResult[]>
+    -- actions --
+    +fetchRouteHistory(vehicleId: string, startDate: string, endDate: string): void
+    +fetchDrivingReport(vehicleId: string, startDate: string, endDate: string): void
+    +fetchOperationalReport(fleetId: string, startDate: string, endDate: string): void
+    +setSearchCriteria(criteria: SearchCriteria): void
+    +executeSearch(): void
+    +clearSearch(): void
+    +setSelectedDateRange(start: string, end: string): void
+    +exportCurrentReport(format: string): void
+    +clearErrors(): void
+  }
+
+  useQueryStore ..> QueryApi : uses
+  useQueryStore ..> RouteHistoryAssembler : uses
+  useQueryStore ..> DrivingReportAssembler : uses
+  useQueryStore ..> OperationalReportAssembler : uses
+  useQueryStore ..> SearchResultAssembler : uses
+  useQueryStore ..> ReportExportAssembler : uses
+  useQueryStore --> SearchCriteria : uses
+  useQueryStore --> DateRange : uses
+}
+
+package "query/presentation/routes" {
+  class QueryRoutes <<router>> {
+    +routes: Routes
+  }
+}
+
+package "query/presentation/views" {
+
+  class RouteHistoryPageView <<view>> {
+    -store: useQueryStore
+    +vehicleId: string
+    +selectedDateRange: DateRange
+    --
+    +ngOnInit(): void
+    +onDateRangeChange(start: string, end: string): void
+    +onSegmentSelected(segmentId: string): void
+    +onExportClicked(format: string): void
+  }
+
+  class DrivingReportPageView <<view>> {
+    -store: useQueryStore
+    +vehicleId: string
+    +selectedDateRange: DateRange
+    --
+    +ngOnInit(): void
+    +onDateRangeChange(start: string, end: string): void
+    +onExportClicked(format: string): void
+  }
+
+  class OperationalReportPageView <<view>> {
+    -store: useQueryStore
+    +fleetId: string
+    +selectedDateRange: DateRange
+    --
+    +ngOnInit(): void
+    +onDateRangeChange(start: string, end: string): void
+    +onExportClicked(format: string): void
+    +onVehicleDrilldown(vehicleId: string): void
+  }
+
+  class SearchView <<view>> {
+    -store: useQueryStore
+    --
+    +ngOnInit(): void
+    +onQueryInput(text: string): void
+    +onFilterChange(criteria: SearchCriteria): void
+    +onResultSelected(result: SearchResult): void
+  }
+}
+
+package "query/presentation/components" {
+
+  class DateRangePickerComponent <<component>> {
+    +value: DateRange (input)
+    +changed: object (output)
+    --
+    +emitChangedEvent(start: string, end: string): void
+  }
+
+  class RouteHistoryMapComponent <<component>> {
+    +view: RouteHistoryView (input)
+    --
+    +drawSegments(): void
+  }
+
+  class RouteSegmentListComponent <<component>> {
+    +segments: RouteSegmentSummary[] (input)
+    +segmentSelected: string (output)
+    --
+    +emitSegmentSelectedEvent(segmentId: string): void
+  }
+
+  class DrivingScoreCardComponent <<component>> {
+    +view: DrivingReportView (input)
+    --
+    +getScoreColor(): string
+  }
+
+  class RiskPatternListComponent <<component>> {
+    +patterns: RiskPattern[] (input)
+  }
+
+  class OperationalSummaryTableComponent <<component>> {
+    +summaries: VehicleOperationalSummary[] (input)
+    +vehicleSelected: string (output)
+    --
+    +emitVehicleSelectedEvent(vehicleId: string): void
+  }
+
+  class SearchBarComponent <<component>> {
+    +criteria: SearchCriteria (input)
+    +criteriaChanged: object (output)
+    --
+    +emitCriteriaChangedEvent(criteria: SearchCriteria): void
+  }
+
+  class SearchFiltersComponent <<component>> {
+    +criteria: SearchCriteria (input)
+    +filtersChanged: object (output)
+    --
+    +emitFiltersChangedEvent(criteria: SearchCriteria): void
+  }
+
+  class SearchResultListComponent <<component>> {
+    +results: SearchResult[] (input)
+    +resultSelected: object (output)
+    --
+    +emitResultSelectedEvent(result: SearchResult): void
+  }
+
+  class SearchResultItemComponent <<component>> {
+    +result: SearchResult (input)
+    --
+    +getEntityIcon(): string
+  }
+
+  class ExportButtonComponent <<component>> {
+    +sourceReportId: string (input)
+    +exportRequested: object (output)
+    --
+    +emitExportRequestedEvent(sourceReportId: string, format: string): void
+  }
+
+  class NoDataPlaceholderComponent <<component>> {
+    +message: string (input)
+  }
+
+  RouteHistoryMapComponent --> RouteHistoryView : input
+  RouteSegmentListComponent --> RouteSegmentSummary : input
+  DrivingScoreCardComponent --> DrivingReportView : input
+  RiskPatternListComponent --> RiskPattern : input
+  OperationalSummaryTableComponent --> VehicleOperationalSummary : input
+  SearchBarComponent --> SearchCriteria : input
+  SearchFiltersComponent --> SearchCriteria : input
+  SearchResultListComponent o-- SearchResultItemComponent : composes
+  SearchResultItemComponent --> SearchResult : input
+  DateRangePickerComponent --> DateRange : input
+}
+
+' ===== Navigation =====
+QueryRoutes ..> RouteHistoryPageView : "navigates to"
+QueryRoutes ..> DrivingReportPageView : "navigates to"
+QueryRoutes ..> OperationalReportPageView : "navigates to"
+QueryRoutes ..> SearchView : "navigates to"
+
+' ===== Composition =====
+RouteHistoryPageView o-- DateRangePickerComponent : contains
+RouteHistoryPageView o-- RouteHistoryMapComponent : contains
+RouteHistoryPageView o-- RouteSegmentListComponent : contains
+RouteHistoryPageView o-- ExportButtonComponent : contains
+RouteHistoryPageView o-- NoDataPlaceholderComponent : contains
+
+DrivingReportPageView o-- DateRangePickerComponent : contains
+DrivingReportPageView o-- DrivingScoreCardComponent : contains
+DrivingReportPageView o-- RiskPatternListComponent : contains
+DrivingReportPageView o-- ExportButtonComponent : contains
+DrivingReportPageView o-- NoDataPlaceholderComponent : contains
+
+OperationalReportPageView o-- DateRangePickerComponent : contains
+OperationalReportPageView o-- OperationalSummaryTableComponent : contains
+OperationalReportPageView o-- ExportButtonComponent : contains
+OperationalReportPageView o-- NoDataPlaceholderComponent : contains
+
+SearchView o-- SearchBarComponent : contains
+SearchView o-- SearchFiltersComponent : contains
+SearchView o-- SearchResultListComponent : contains
+SearchView o-- NoDataPlaceholderComponent : contains
+
+' ===== Store usage =====
+RouteHistoryPageView ..> useQueryStore : uses
+DrivingReportPageView ..> useQueryStore : uses
+OperationalReportPageView ..> useQueryStore : uses
+SearchView ..> useQueryStore : uses
+
+' ===== Domain usage from views =====
+RouteHistoryPageView --> RouteHistoryView : uses
+DrivingReportPageView --> DrivingReportView : uses
+OperationalReportPageView --> OperationalReportView : uses
+SearchView --> SearchResult : uses
+SearchView --> SearchCriteria : uses
+
+@enduml

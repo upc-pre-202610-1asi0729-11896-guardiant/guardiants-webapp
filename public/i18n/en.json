@@ -15,6 +15,23 @@
     "user-authenticated": "User Authenticated",
     "onboarding": "Onboarding"
   },
+  "home": {
+    "title": "Home",
+    "greeting": "Hi",
+    "active-vehicle": "Active Vehicle",
+    "last-updated": "Last updated",
+    "lock-vehicle": "Lock vehicle",
+    "view-in-map": "View in map",
+    "side-cards": {
+      "recent-alerts": "Recent alerts",
+      "quick-actions": "Quick actions",
+      "block": "Block",
+      "report-robbery": "Report robbery",
+      "share-location": "Share location",
+      "plan": "Plan",
+      "device": "Device"
+    }
+  },
   "fleet": {
 
   },

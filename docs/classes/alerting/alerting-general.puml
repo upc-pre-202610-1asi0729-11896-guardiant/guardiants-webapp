@@ -1,0 +1,614 @@
+@startuml
+' GOD's Tracker - Security & Alerting Bounded Context - Class Diagram
+' Covers: geofence configuration, security options / automatic defense protocol,
+' notification preferences, rule engine evaluation, security alerts (generation,
+' filtering, detail, acknowledgement, closure), and push notification delivery.
+
+package "alerting/domain/model" {
+
+  class AlertRule <<entity>> {
+    +id: string
+    +ownerId: string
+    +vehicleId: string|null
+    +type: AlertRuleType
+    +geofence: Geofence|null
+    +speedThresholdKmh: number|null
+    +prolongedStopThresholdMinutes: number|null
+    +enabled: boolean
+    +createdAt: string
+    +updatedAt: string
+    --
+    +isViolatedBy(event: RuleEvaluationInput): boolean
+    +appliesToVehicle(vehicleId: string): boolean
+  }
+
+  enum AlertRuleType {
+    GEOFENCE
+    SPEED_LIMIT
+    GPS_JAMMING
+    PROLONGED_STOP
+    SUSPICIOUS_MOVEMENT
+  }
+
+  class Geofence <<value object>> {
+    +centerLat: number
+    +centerLng: number
+    +radiusMeters: number
+    --
+    +contains(lat: number, lng: number): boolean
+  }
+
+  class RuleEvaluationInput <<value object>> {
+    +vehicleId: string
+    +eventType: TelemetryEventType
+    +lat: number
+    +lng: number
+    +speedKmh: number|null
+    +stopDurationMinutes: number|null
+  }
+
+  enum TelemetryEventType {
+    GEOFENCE_EXIT
+    ROUTE_DEVIATION
+    PROLONGED_STOP
+    GPS_SIGNAL_LOST
+    SPEED_EXCEEDED
+  }
+
+  class SecurityAlert <<entity>> {
+    +id: string
+    +ownerId: string
+    +vehicleId: string
+    +ruleId: string|null
+    +type: AlertType
+    +severity: AlertSeverity
+    +location: GeoPoint
+    +description: string
+    +generatedAt: string
+    +status: AlertStatus
+    +acknowledgedAt: string|null
+    +closedAt: string|null
+    --
+    +isUnread(): boolean
+    +isUrgent(): boolean
+    +isWithinPeriod(period: AlertPeriod): boolean
+    +canBeAcknowledged(): boolean
+    +canBeClosed(): boolean
+  }
+
+  enum AlertType {
+    SUSPICIOUS_MOVEMENT
+    GPS_SPOOFING
+    SPEED_EXCEEDED
+    ROUTE_DEVIATION
+    PROLONGED_STOP
+    GEOFENCE_EXIT
+    THEFT_REPORTED
+  }
+
+  enum AlertSeverity {
+    INFO
+    WARNING
+    CRITICAL
+  }
+
+  enum AlertStatus {
+    GENERATED
+    ACKNOWLEDGED
+    CLOSED
+  }
+
+  class GeoPoint <<value object>> {
+    +lat: number
+    +lng: number
+  }
+
+  enum AlertPeriod {
+    LAST_HOUR
+    TODAY
+    LAST_7_DAYS
+    LAST_30_DAYS
+  }
+
+  class AlertFilter <<value object>> {
+    +category: AlertFilterCategory
+    +period: AlertPeriod|null
+    --
+    +matches(alert: SecurityAlert): boolean
+  }
+
+  enum AlertFilterCategory {
+    ALL
+    UNREAD
+    URGENT
+  }
+
+  class AutomaticDefenseAction <<entity>> {
+    +id: string
+    +vehicleId: string
+    +triggeredByAlertId: string
+    +actionType: DefenseActionType
+    +commandId: string|null
+    +result: DefenseActionResult
+    +triggeredAt: string
+    +deactivatedAt: string|null
+    --
+    +isActive(): boolean
+    +logSummary(): string
+  }
+
+  enum DefenseActionType {
+    ENGINE_BLOCK
+    NOTIFY_AUTHORITIES
+  }
+
+  enum DefenseActionResult {
+    PENDING
+    DISPATCHED
+    SUCCEEDED
+    FAILED
+  }
+
+  class SecurityOptions <<entity>> {
+    +ownerId: string
+    +suspiciousMovementEnabled: boolean
+    +autoEngineShutdownEnabled: boolean
+    +autoSafeModeEnabled: boolean
+    +updatedAt: string
+    --
+    +shouldTriggerAutoDefense(alert: SecurityAlert): boolean
+  }
+
+  class NotificationPreferences <<entity>> {
+    +ownerId: string
+    +securityAlertsEnabled: boolean
+    +liveLocationEnabled: boolean
+    +maintenanceRemindersEnabled: boolean
+    +updatedAt: string
+    --
+    +allows(alertType: AlertType): boolean
+  }
+
+  AlertRule "1" *-- "1" AlertRuleType : type
+  AlertRule "1" *-- "0..1" Geofence : geofence
+  SecurityAlert "1" *-- "1" AlertType : type
+  SecurityAlert "1" *-- "1" AlertSeverity : severity
+  SecurityAlert "1" *-- "1" AlertStatus : status
+  SecurityAlert "1" *-- "1" GeoPoint : location
+  AlertFilter "1" *-- "1" AlertFilterCategory : category
+  AlertFilter "1" --> "0..1" AlertPeriod : period
+  AutomaticDefenseAction "1" *-- "1" DefenseActionType : actionType
+  AutomaticDefenseAction "1" *-- "1" DefenseActionResult : result
+  AutomaticDefenseAction "1" --> "1" SecurityAlert : triggeredByAlertId
+  RuleEvaluationInput "1" *-- "1" TelemetryEventType : eventType
+  AlertRule ..> RuleEvaluationInput : evaluates
+  AlertRule ..> SecurityAlert : "may generate"
+}
+
+package "alerting/infrastructure" {
+
+  ' ===== Resource / Response contracts =====
+
+  interface AlertRuleResource {
+    +id: string
+    +ownerId: string
+    +vehicleId: string|null
+    +type: string
+    +geofence: GeofenceResource|null
+    +speedThresholdKmh: number|null
+    +prolongedStopThresholdMinutes: number|null
+    +enabled: boolean
+  }
+
+  interface GeofenceResource {
+    +centerLat: number
+    +centerLng: number
+    +radiusMeters: number
+  }
+
+  interface AlertRuleResponse {
+    +status: string
+    +rules: AlertRuleResource[]
+  }
+
+  interface SecurityAlertResource {
+    +id: string
+    +ownerId: string
+    +vehicleId: string
+    +ruleId: string|null
+    +type: string
+    +severity: string
+    +location: GeoPointResource
+    +description: string
+    +generatedAt: string
+    +status: string
+    +acknowledgedAt: string|null
+    +closedAt: string|null
+  }
+
+  interface GeoPointResource {
+    +lat: number
+    +lng: number
+  }
+
+  interface SecurityAlertResponse {
+    +status: string
+    +alerts: SecurityAlertResource[]
+  }
+
+  interface AutomaticDefenseActionResource {
+    +id: string
+    +vehicleId: string
+    +triggeredByAlertId: string
+    +actionType: string
+    +commandId: string|null
+    +result: string
+    +triggeredAt: string
+    +deactivatedAt: string|null
+  }
+
+  interface AutomaticDefenseActionResponse {
+    +status: string
+    +actions: AutomaticDefenseActionResource[]
+  }
+
+  interface SecurityOptionsResource {
+    +ownerId: string
+    +suspiciousMovementEnabled: boolean
+    +autoEngineShutdownEnabled: boolean
+    +autoSafeModeEnabled: boolean
+    +updatedAt: string
+  }
+
+  interface SecurityOptionsResponse {
+    +status: string
+    +options: SecurityOptionsResource
+  }
+
+  interface NotificationPreferencesResource {
+    +ownerId: string
+    +securityAlertsEnabled: boolean
+    +liveLocationEnabled: boolean
+    +maintenanceRemindersEnabled: boolean
+    +updatedAt: string
+  }
+
+  interface NotificationPreferencesResponse {
+    +status: string
+    +preferences: NotificationPreferencesResource
+  }
+
+  ' ===== Assemblers (one per resource) =====
+
+  class AlertRuleAssembler <<assembler>> {
+    +toEntityFromResource(resource: AlertRuleResource): AlertRule|null
+    +toEntitiesFromResponse(response: AlertRuleResponse): AlertRule[]
+  }
+
+  class SecurityAlertAssembler <<assembler>> {
+    +toEntityFromResource(resource: SecurityAlertResource): SecurityAlert|null
+    +toEntitiesFromResponse(response: SecurityAlertResponse): SecurityAlert[]
+  }
+
+  class AutomaticDefenseActionAssembler <<assembler>> {
+    +toEntityFromResource(resource: AutomaticDefenseActionResource): AutomaticDefenseAction|null
+    +toEntitiesFromResponse(response: AutomaticDefenseActionResponse): AutomaticDefenseAction[]
+  }
+
+  class SecurityOptionsAssembler <<assembler>> {
+    +toEntityFromResource(resource: SecurityOptionsResource): SecurityOptions|null
+    +toEntityFromResponse(response: SecurityOptionsResponse): SecurityOptions|null
+  }
+
+  class NotificationPreferencesAssembler <<assembler>> {
+    +toEntityFromResource(resource: NotificationPreferencesResource): NotificationPreferences|null
+    +toEntityFromResponse(response: NotificationPreferencesResponse): NotificationPreferences|null
+  }
+
+  ' ===== API (single, multi-endpoint) =====
+
+  class AlertingApi <<api>> {
+    -alertRules: BaseEndpoint
+    -securityAlerts: BaseEndpoint
+    -defenseActions: BaseEndpoint
+    -securityOptions: BaseEndpoint
+    -notificationPreferences: BaseEndpoint
+    --
+    +getAlertRules(ownerId: string): Promise<AlertRuleResponse>
+    +configureGeofenceRule(resource: AlertRuleResource): Promise<AlertRuleResponse>
+    +updateAlertRule(id: string, patch: object): Promise<AlertRuleResponse>
+    +getSecurityAlerts(ownerId: string, filter: object): Promise<SecurityAlertResponse>
+    +getSecurityAlertById(id: string): Promise<SecurityAlertResponse>
+    +acknowledgeAlert(id: string): Promise<SecurityAlertResponse>
+    +closeAlert(id: string): Promise<SecurityAlertResponse>
+    +getDefenseActions(vehicleId: string): Promise<AutomaticDefenseActionResponse>
+    +recordDefenseAction(resource: AutomaticDefenseActionResource): Promise<AutomaticDefenseActionResponse>
+    +updateDefenseActionResult(id: string, result: string, commandId: string|null): Promise<AutomaticDefenseActionResponse>
+    +getSecurityOptions(ownerId: string): Promise<SecurityOptionsResponse>
+    +updateSecurityOptions(ownerId: string, patch: object): Promise<SecurityOptionsResponse>
+    +getNotificationPreferences(ownerId: string): Promise<NotificationPreferencesResponse>
+    +updateNotificationPreferences(ownerId: string, patch: object): Promise<NotificationPreferencesResponse>
+    +subscribeToAlertStream(ownerId: string): Observable<SecurityAlertResource>
+  }
+
+  AlertRuleAssembler ..> AlertRuleResource : transforms
+  AlertRuleAssembler ..> AlertRuleResponse : transforms
+  AlertRuleAssembler ..> GeofenceResource : transforms
+  AlertRuleAssembler --> AlertRule : creates
+  AlertRuleAssembler --> Geofence : creates
+  AlertRuleAssembler ..> AlertingApi : uses
+
+  SecurityAlertAssembler ..> SecurityAlertResource : transforms
+  SecurityAlertAssembler ..> SecurityAlertResponse : transforms
+  SecurityAlertAssembler ..> GeoPointResource : transforms
+  SecurityAlertAssembler --> SecurityAlert : creates
+  SecurityAlertAssembler --> GeoPoint : creates
+  SecurityAlertAssembler ..> AlertingApi : uses
+
+  AutomaticDefenseActionAssembler ..> AutomaticDefenseActionResource : transforms
+  AutomaticDefenseActionAssembler ..> AutomaticDefenseActionResponse : transforms
+  AutomaticDefenseActionAssembler --> AutomaticDefenseAction : creates
+  AutomaticDefenseActionAssembler ..> AlertingApi : uses
+
+  SecurityOptionsAssembler ..> SecurityOptionsResource : transforms
+  SecurityOptionsAssembler ..> SecurityOptionsResponse : transforms
+  SecurityOptionsAssembler --> SecurityOptions : creates
+  SecurityOptionsAssembler ..> AlertingApi : uses
+
+  NotificationPreferencesAssembler ..> NotificationPreferencesResource : transforms
+  NotificationPreferencesAssembler ..> NotificationPreferencesResponse : transforms
+  NotificationPreferencesAssembler --> NotificationPreferences : creates
+  NotificationPreferencesAssembler ..> AlertingApi : uses
+}
+
+package "shared/infrastructure [stubs]" {
+  class BaseApi <<api>> {
+  }
+  class BaseEndpoint <<api>> {
+  }
+  BaseApi *-- BaseEndpoint
+}
+
+AlertingApi --|> BaseApi : extends
+
+package "commands [stubs]" {
+  class useCommandsStore <<store>> {
+    +issueEngineBlock(vehicleId: string, triggeredByAlertId: string|null): Promise<string>
+  }
+}
+
+package "alerting/application" {
+
+  class useAlertingStore <<store>> {
+    -- state --
+    +alertRules: AlertRule[]
+    +securityAlerts: SecurityAlert[]
+    +defenseActions: AutomaticDefenseAction[]
+    +securityOptions: SecurityOptions|null
+    +notificationPreferences: NotificationPreferences|null
+    +activeFilter: AlertFilter
+    +selectedAlertId: string|null
+    +liveStreamConnected: boolean
+    +loading: boolean
+    +errors: Error[]
+    -- computed --
+    +filteredAlerts: SecurityAlert[]
+    +unreadCount: number
+    +urgentCount: number
+    +todaysAlertCount: number
+    +activeDefenseActions: AutomaticDefenseAction[]
+    +selectedAlert: SecurityAlert|null
+    -- actions --
+    +fetchAlertRules(ownerId: string): void
+    +configureGeofence(centerLat: number, centerLng: number, radiusMeters: number): void
+    +updateAlertRule(ruleId: string, patch: object): void
+    +fetchSecurityAlerts(ownerId: string): void
+    +connectAlertStream(ownerId: string): void
+    +disconnectAlertStream(): void
+    +setFilter(category: string, period: string|null): void
+    +selectAlert(alertId: string): void
+    +acknowledgeAlert(alertId: string): void
+    +closeAlert(alertId: string): void
+    +fetchDefenseActions(vehicleId: string): void
+    +recordAutomaticDefenseTrigger(vehicleId: string, alertId: string, actionType: string): void
+    +requestEngineBlockFromAlert(alertId: string, vehicleId: string): void
+    +fetchSecurityOptions(ownerId: string): void
+    +updateSecurityOptions(patch: object): void
+    +fetchNotificationPreferences(ownerId: string): void
+    +updateNotificationPreferences(patch: object): void
+    +clearErrors(): void
+  }
+
+  useAlertingStore ..> AlertingApi : uses
+  useAlertingStore ..> AlertRuleAssembler : uses
+  useAlertingStore ..> SecurityAlertAssembler : uses
+  useAlertingStore ..> AutomaticDefenseActionAssembler : uses
+  useAlertingStore ..> SecurityOptionsAssembler : uses
+  useAlertingStore ..> NotificationPreferencesAssembler : uses
+  useAlertingStore --> AlertFilter : uses
+  useAlertingStore ..> useCommandsStore : "delegates engine block to"
+}
+
+package "alerting/presentation/routes" {
+  class AlertingRoutes <<router>> {
+    +routes: Routes
+  }
+}
+
+package "alerting/presentation/views" {
+
+  class GeofenceConfigView <<view>> {
+    -store: useAlertingStore
+    +ownerId: string
+    --
+    +ngOnInit(): void
+    +onMapAreaDrawn(centerLat: number, centerLng: number, radiusMeters: number): void
+    +onSaveGeofence(): void
+  }
+
+  class SecurityAlertsView <<view>> {
+    -store: useAlertingStore
+    +ownerId: string
+    --
+    +ngOnInit(): void
+    +ngOnDestroy(): void
+    +onFilterChange(category: string, period: string|null): void
+    +onAlertSelected(alertId: string): void
+  }
+
+  class AlertDetailView <<view>> {
+    -store: useAlertingStore
+    +alertId: string
+    --
+    +ngOnInit(): void
+    +onAcknowledge(): void
+    +onClose(): void
+    +onBlockVehicleRequested(): void
+    ' delegates to commands BC via useAlertingStore.requestEngineBlockFromAlert
+  }
+
+  class SecuritySettingsView <<view>> {
+    -store: useAlertingStore
+    +ownerId: string
+    --
+    +ngOnInit(): void
+    +onToggleSuspiciousMovement(enabled: boolean): void
+    +onToggleAutoEngineShutdown(enabled: boolean): void
+    +onToggleAutoSafeMode(enabled: boolean): void
+  }
+
+  class NotificationSettingsView <<view>> {
+    -store: useAlertingStore
+    +ownerId: string
+    --
+    +ngOnInit(): void
+    +onTogglePreference(key: string, enabled: boolean): void
+  }
+}
+
+package "alerting/presentation/components" {
+
+  class GeofenceMapEditorComponent <<component>> {
+    +initialGeofence: Geofence|null (input)
+    +areaDrawn: object (output)
+    --
+    +emitAreaDrawnEvent(centerLat: number, centerLng: number, radiusMeters: number): void
+  }
+
+  class AlertFilterBarComponent <<component>> {
+    +activeFilter: AlertFilter (input)
+    +filterChanged: object (output)
+    --
+    +emitFilterChangedEvent(category: string, period: string|null): void
+  }
+
+  class AlertListComponent <<component>> {
+    +alerts: SecurityAlert[] (input)
+    +alertSelected: string (output)
+    --
+    +emitAlertSelectedEvent(alertId: string): void
+  }
+
+  class AlertListItemComponent <<component>> {
+    +alert: SecurityAlert (input)
+    --
+    +getSeverityBadgeColor(): string
+    +getTypeIcon(): string
+  }
+
+  class AlertDetailCardComponent <<component>> {
+    +alert: SecurityAlert (input)
+    +acknowledged: string (output)
+    +closed: string (output)
+    --
+    +emitAcknowledgeEvent(alertId: string): void
+    +emitCloseEvent(alertId: string): void
+  }
+
+  class BlockVehicleButtonComponent <<component>> {
+    +vehicleId: string (input)
+    +blockRequested: string (output)
+    --
+    +emitBlockRequestedEvent(vehicleId: string): void
+    ' triggers useAlertingStore.requestEngineBlockFromAlert,
+    ' which delegates to commands BC
+  }
+
+  class DailyAlertsSummaryCardComponent <<component>> {
+    +unreadCount: number (input)
+    +urgentCount: number (input)
+    +todaysAlertCount: number (input)
+  }
+
+  class SecurityToggleComponent <<component>> {
+    +label: string (input)
+    +enabled: boolean (input)
+    +toggled: boolean (output)
+    --
+    +emitToggleEvent(enabled: boolean): void
+  }
+
+  class DefenseActionLogComponent <<component>> {
+    +actions: AutomaticDefenseAction[] (input)
+    --
+    +getResultBadgeColor(result: string): string
+  }
+
+  class PushPermissionPromptComponent <<component>> {
+    +granted: boolean (output)
+    --
+    +emitGrantedEvent(granted: boolean): void
+  }
+
+  AlertListComponent o-- AlertListItemComponent : composes
+  AlertListItemComponent --> SecurityAlert : input
+  AlertDetailCardComponent --> SecurityAlert : input
+  AlertDetailCardComponent o-- BlockVehicleButtonComponent : composes
+  AlertFilterBarComponent --> AlertFilter : input
+  DefenseActionLogComponent --> AutomaticDefenseAction : input
+  GeofenceMapEditorComponent --> Geofence : input
+}
+
+' ===== Navigation =====
+AlertingRoutes ..> GeofenceConfigView : "navigates to"
+AlertingRoutes ..> SecurityAlertsView : "navigates to"
+AlertingRoutes ..> AlertDetailView : "navigates to"
+AlertingRoutes ..> SecuritySettingsView : "navigates to"
+AlertingRoutes ..> NotificationSettingsView : "navigates to"
+
+' ===== Composition =====
+GeofenceConfigView o-- GeofenceMapEditorComponent : contains
+
+SecurityAlertsView o-- AlertFilterBarComponent : contains
+SecurityAlertsView o-- AlertListComponent : contains
+SecurityAlertsView o-- DailyAlertsSummaryCardComponent : contains
+
+AlertDetailView o-- AlertDetailCardComponent : contains
+
+SecuritySettingsView o-- SecurityToggleComponent : contains
+SecuritySettingsView o-- DefenseActionLogComponent : contains
+
+NotificationSettingsView o-- SecurityToggleComponent : contains
+NotificationSettingsView o-- PushPermissionPromptComponent : contains
+
+' ===== Store usage =====
+GeofenceConfigView ..> useAlertingStore : uses
+SecurityAlertsView ..> useAlertingStore : uses
+AlertDetailView ..> useAlertingStore : uses
+SecuritySettingsView ..> useAlertingStore : uses
+NotificationSettingsView ..> useAlertingStore : uses
+
+' ===== Domain usage from views =====
+GeofenceConfigView --> AlertRule : uses
+GeofenceConfigView --> Geofence : uses
+SecurityAlertsView --> SecurityAlert : uses
+SecurityAlertsView --> AlertFilter : uses
+AlertDetailView --> SecurityAlert : uses
+AlertDetailView --> AutomaticDefenseAction : uses
+SecuritySettingsView --> SecurityOptions : uses
+SecuritySettingsView --> AutomaticDefenseAction : uses
+NotificationSettingsView --> NotificationPreferences : uses
+
+@enduml
+
+@enduml
