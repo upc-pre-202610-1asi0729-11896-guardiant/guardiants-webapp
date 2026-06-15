@@ -1,0 +1,564 @@
+@startuml
+' GOD's Tracker - Telemetry Bounded Context - Class Diagram (v3)
+' Multi-assembler infrastructure (per nutrisense reference) + Resource/Response interfaces
+' (per learning-center/catch-up professor guides) + full view/component detail.
+
+package "telemetry/domain/model" {
+
+  class TelemetryPoint <<entity>> {
+    +id: string
+    +vehicleId: string
+    +deviceId: string
+    +timestamp: string
+    +lat: number
+    +lng: number
+    +heading: number|null
+    +speedKmh: number
+    +fuelLevelPercent: number|null
+    +engineTemperatureC: number|null
+    +batteryLevelPercent: number
+    +odometerKm: number|null
+    +rpm: number|null
+    +engineOn: boolean
+    +connectivity: ConnectivityStatus
+    --
+    +isLowFuel(thresholdPercent: number): boolean
+    +isOverheating(thresholdC: number): boolean
+    +isLowBattery(thresholdPercent: number): boolean
+    +isStale(thresholdMinutes: number): boolean
+  }
+
+  class VehicleGeneralStatus <<entity>> {
+    +vehicleId: string
+    +latestPoint: TelemetryPoint|null
+    +activeAlertCount: number
+    +isLocked: boolean
+    +lastUpdatedAt: string
+    --
+    +isOnline(): boolean
+    +summary(): string
+  }
+
+  class RouteSegment <<entity>> {
+    +id: string
+    +vehicleId: string
+    +startedAt: string
+    +endedAt: string|null
+    +points: GeoPoint[]
+    +distanceKm: number
+    --
+    +durationMinutes(): number
+    +isOngoing(): boolean
+  }
+
+  class GeoPoint <<value object>> {
+    +lat: number
+    +lng: number
+    +recordedAt: string
+  }
+
+  class RouteDeviation <<entity>> {
+    +id: string
+    +vehicleId: string
+    +expectedRouteId: string|null
+    +detectedAt: string
+    +location: GeoPoint
+    +deviationDistanceMeters: number
+    --
+    +exceedsThreshold(thresholdMeters: number): boolean
+  }
+
+  class ProlongedStop <<entity>> {
+    +id: string
+    +vehicleId: string
+    +location: GeoPoint
+    +startedAt: string
+    +endedAt: string|null
+    +thresholdMinutes: number
+    --
+    +durationMinutes(): number
+    +isResolved(): boolean
+  }
+
+  class DrivingReport <<entity>> {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +averageSpeedKmh: number
+    +drivingScore: number
+    +harshBrakingEvents: number
+    +harshAccelerationEvents: number
+    +summaryJson: string
+    --
+    +isHighRisk(thresholdScore: number): boolean
+  }
+
+  class ConnectivityStatus <<value object>> {
+    +value: ConnectivityValue
+    +lastSeenAt: string
+    --
+    +isOnline(): boolean
+    +isJammed(): boolean
+  }
+
+  enum ConnectivityValue {
+    ONLINE
+    OFFLINE
+    GPS_SIGNAL_LOST
+    RECONNECTED
+  }
+
+  VehicleGeneralStatus "1" --> "0..1" TelemetryPoint : latestPoint
+  TelemetryPoint "1" *-- "1" ConnectivityStatus : connectivity
+  ConnectivityStatus "1" *-- "1" ConnectivityValue : value
+  RouteSegment "1" o-- "*" GeoPoint : points
+  RouteDeviation "1" *-- "1" GeoPoint : location
+  ProlongedStop "1" *-- "1" GeoPoint : location
+}
+
+package "telemetry/infrastructure" {
+
+  ' ===== Resource / Response contracts (per professor guide) =====
+
+  interface TelemetryPointResource {
+    +vehicleId: string
+    +deviceId: string
+    +timestamp: string
+    +lat: number
+    +lng: number
+    +heading: number|null
+    +speedKmh: number
+    +fuelLevelPercent: number|null
+    +engineTemperatureC: number|null
+    +batteryLevelPercent: number
+    +odometerKm: number|null
+    +rpm: number|null
+    +engineOn: boolean
+    +connectivity: string
+  }
+
+  interface TelemetryStreamResponse {
+    +status: string
+    +points: TelemetryPointResource[]
+  }
+
+  interface VehicleStatusResource {
+    +vehicleId: string
+    +latestPoint: TelemetryPointResource|null
+    +activeAlertCount: number
+    +isLocked: boolean
+    +lastUpdatedAt: string
+  }
+
+  interface VehicleStatusResponse {
+    +status: string
+    +vehicle: VehicleStatusResource
+  }
+
+  interface GeoPointResource {
+    +lat: number
+    +lng: number
+    +recordedAt: string
+  }
+
+  interface RouteSegmentResource {
+    +id: string
+    +vehicleId: string
+    +startedAt: string
+    +endedAt: string|null
+    +points: GeoPointResource[]
+    +distanceKm: number
+  }
+
+  interface RouteHistoryResponse {
+    +status: string
+    +vehicleId: string
+    +segments: RouteSegmentResource[]
+  }
+
+  interface RouteDeviationResource {
+    +id: string
+    +vehicleId: string
+    +expectedRouteId: string|null
+    +detectedAt: string
+    +location: GeoPointResource
+    +deviationDistanceMeters: number
+  }
+
+  interface RouteDeviationResponse {
+    +status: string
+    +deviations: RouteDeviationResource[]
+  }
+
+  interface ProlongedStopResource {
+    +id: string
+    +vehicleId: string
+    +location: GeoPointResource
+    +startedAt: string
+    +endedAt: string|null
+    +thresholdMinutes: number
+  }
+
+  interface ProlongedStopResponse {
+    +status: string
+    +stops: ProlongedStopResource[]
+  }
+
+  interface DrivingReportResource {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +averageSpeedKmh: number
+    +drivingScore: number
+    +harshBrakingEvents: number
+    +harshAccelerationEvents: number
+    +summary: string
+  }
+
+  interface DrivingReportResponse {
+    +status: string
+    +reports: DrivingReportResource[]
+  }
+
+  ' ===== Assemblers (one per resource, per nutrisense reference) =====
+
+  class TelemetryPointAssembler <<assembler>> {
+    +toEntityFromResource(resource: TelemetryPointResource): TelemetryPoint|null
+    +toEntitiesFromResponse(response: TelemetryStreamResponse): TelemetryPoint[]
+  }
+
+  class VehicleGeneralStatusAssembler <<assembler>> {
+    +toEntityFromResource(resource: VehicleStatusResource): VehicleGeneralStatus|null
+    +toEntityFromResponse(response: VehicleStatusResponse): VehicleGeneralStatus|null
+  }
+
+  class RouteSegmentAssembler <<assembler>> {
+    +toEntityFromResource(resource: RouteSegmentResource): RouteSegment|null
+    +toEntitiesFromResponse(response: RouteHistoryResponse): RouteSegment[]
+  }
+
+  class RouteDeviationAssembler <<assembler>> {
+    +toEntityFromResource(resource: RouteDeviationResource): RouteDeviation|null
+    +toEntitiesFromResponse(response: RouteDeviationResponse): RouteDeviation[]
+  }
+
+  class ProlongedStopAssembler <<assembler>> {
+    +toEntityFromResource(resource: ProlongedStopResource): ProlongedStop|null
+    +toEntitiesFromResponse(response: ProlongedStopResponse): ProlongedStop[]
+  }
+
+  class DrivingReportAssembler <<assembler>> {
+    +toEntityFromResource(resource: DrivingReportResource): DrivingReport|null
+    +toEntitiesFromResponse(response: DrivingReportResponse): DrivingReport[]
+  }
+
+  ' ===== API (single, multi-endpoint, per nutrisense reference) =====
+
+  class TelemetryApi <<api>> {
+    -telemetryPoints: BaseEndpoint
+    -vehicleStatus: BaseEndpoint
+    -routeSegments: BaseEndpoint
+    -routeDeviations: BaseEndpoint
+    -prolongedStops: BaseEndpoint
+    -drivingReports: BaseEndpoint
+    --
+    +getLatestTelemetryPoint(vehicleId: string): Promise<TelemetryStreamResponse>
+    +getLiveStatus(vehicleId: string): Promise<VehicleStatusResponse>
+    +getRouteHistory(vehicleId: string, startDate: string, endDate: string): Promise<RouteHistoryResponse>
+    +getRouteDeviations(vehicleId: string, startDate: string, endDate: string): Promise<RouteDeviationResponse>
+    +getProlongedStops(vehicleId: string, startDate: string, endDate: string): Promise<ProlongedStopResponse>
+    +getDrivingReports(vehicleId: string, startDate: string, endDate: string): Promise<DrivingReportResponse>
+    +subscribeLiveStream(vehicleId: string): Observable<TelemetryPointResource>
+  }
+
+  TelemetryPointAssembler ..> TelemetryPointResource : transforms
+  TelemetryPointAssembler ..> TelemetryStreamResponse : transforms
+  TelemetryPointAssembler --> TelemetryPoint : creates
+  TelemetryPointAssembler ..> TelemetryApi : uses
+
+  VehicleGeneralStatusAssembler ..> VehicleStatusResource : transforms
+  VehicleGeneralStatusAssembler ..> VehicleStatusResponse : transforms
+  VehicleGeneralStatusAssembler --> VehicleGeneralStatus : creates
+  VehicleGeneralStatusAssembler --> TelemetryPointAssembler : delegates latestPoint to
+  VehicleGeneralStatusAssembler ..> TelemetryApi : uses
+
+  RouteSegmentAssembler ..> RouteSegmentResource : transforms
+  RouteSegmentAssembler ..> RouteHistoryResponse : transforms
+  RouteSegmentAssembler ..> GeoPointResource : transforms
+  RouteSegmentAssembler --> RouteSegment : creates
+  RouteSegmentAssembler --> GeoPoint : creates
+  RouteSegmentAssembler ..> TelemetryApi : uses
+
+  RouteDeviationAssembler ..> RouteDeviationResource : transforms
+  RouteDeviationAssembler ..> RouteDeviationResponse : transforms
+  RouteDeviationAssembler --> RouteDeviation : creates
+  RouteDeviationAssembler ..> TelemetryApi : uses
+
+  ProlongedStopAssembler ..> ProlongedStopResource : transforms
+  ProlongedStopAssembler ..> ProlongedStopResponse : transforms
+  ProlongedStopAssembler --> ProlongedStop : creates
+  ProlongedStopAssembler ..> TelemetryApi : uses
+
+  DrivingReportAssembler ..> DrivingReportResource : transforms
+  DrivingReportAssembler ..> DrivingReportResponse : transforms
+  DrivingReportAssembler --> DrivingReport : creates
+  DrivingReportAssembler ..> TelemetryApi : uses
+}
+
+package "shared/infrastructure [stubs]" {
+  class BaseApi <<api>> {
+  }
+  class BaseEndpoint <<api>> {
+  }
+  BaseApi *-- BaseEndpoint
+}
+
+TelemetryApi --|> BaseApi : extends
+
+package "telemetry/application" {
+
+  class useTelemetryStore <<store>> {
+    -- state --
+    +liveStatusByVehicle: Record<string, VehicleGeneralStatus>
+    +routeHistory: RouteSegment[]
+    +routeDeviations: RouteDeviation[]
+    +prolongedStops: ProlongedStop[]
+    +drivingReports: DrivingReport[]
+    +selectedVehicleId: string|null
+    +selectedDateRange: { start: string, end: string }|null
+    +liveStreamConnected: boolean
+    +loading: boolean
+    +errors: Error[]
+    -- computed --
+    +activeVehicleStatus: VehicleGeneralStatus|null
+    +activeRouteDistanceKm: number
+    +activeDrivingScore: number|null
+    +hasActiveDeviation: boolean
+    +hasActiveProlongedStop: boolean
+    +chartSeriesForMetric(metric: string): { timestamp: string, value: number }[]
+    -- actions --
+    +fetchLiveStatus(vehicleId: string): void
+    +connectLiveStream(vehicleId: string): void
+    +disconnectLiveStream(): void
+    +fetchRouteHistory(vehicleId: string, startDate: string, endDate: string): void
+    +fetchRouteDeviations(vehicleId: string, startDate: string, endDate: string): void
+    +fetchProlongedStops(vehicleId: string, startDate: string, endDate: string): void
+    +fetchDrivingReports(vehicleId: string, startDate: string, endDate: string): void
+    +setSelectedVehicle(vehicleId: string): void
+    +setSelectedDateRange(start: string, end: string): void
+    +exportRouteHistory(format: string): void
+    +clearErrors(): void
+  }
+
+  useTelemetryStore ..> TelemetryApi : uses
+  useTelemetryStore ..> TelemetryPointAssembler : uses
+  useTelemetryStore ..> VehicleGeneralStatusAssembler : uses
+  useTelemetryStore ..> RouteSegmentAssembler : uses
+  useTelemetryStore ..> RouteDeviationAssembler : uses
+  useTelemetryStore ..> ProlongedStopAssembler : uses
+  useTelemetryStore ..> DrivingReportAssembler : uses
+}
+
+package "telemetry/presentation/routes" {
+  class TelemetryRoutes <<router>> {
+    +routes: Routes
+  }
+}
+
+package "telemetry/presentation/views" {
+
+  class LiveTrackingView <<view>> {
+    -store: useTelemetryStore
+    +vehicleId: string
+    --
+    +ngOnInit(): void
+    +ngOnDestroy(): void
+    +centerMapOnVehicle(): void
+    +onBlockEngineClicked(): void
+    +onShareLocationClicked(): void
+  }
+
+  class TelemetryDashboardView <<view>> {
+    -store: useTelemetryStore
+    +vehicleId: string
+    +displayedMetrics: string[]
+    --
+    +ngOnInit(): void
+    +toggleMetric(metric: string): void
+    +refreshStatus(): void
+  }
+
+  class RouteHistoryView <<view>> {
+    -store: useTelemetryStore
+    +vehicleId: string
+    +selectedDateRange: { start: string, end: string }
+    --
+    +ngOnInit(): void
+    +onDateRangeChange(start: string, end: string): void
+    +onExportClicked(format: string): void
+    +onSegmentSelected(segmentId: string): void
+  }
+
+  class DrivingReportView <<view>> {
+    -store: useTelemetryStore
+    +vehicleId: string
+    +selectedDateRange: { start: string, end: string }
+    --
+    +ngOnInit(): void
+    +loadReport(): void
+    +onDateRangeChange(start: string, end: string): void
+  }
+}
+
+package "telemetry/presentation/components" {
+
+  class LiveMapComponent <<component>> {
+    +center: GeoPoint (input)
+    +markers: VehicleMarkerData[] (input)
+    +vehicleSelected: string (output)
+    --
+    +emitVehicleSelectedEvent(vehicleId: string): void
+    +zoomToFit(): void
+  }
+
+  class VehicleMarkerComponent <<component>> {
+    +position: GeoPoint (input)
+    +connectivity: ConnectivityStatus (input)
+    +heading: number (input)
+    --
+    +getMarkerIcon(): string
+    +getRotationDegrees(): number
+  }
+
+  class VehicleMarkerData <<value object>> {
+    +vehicleId: string
+    +position: GeoPoint
+    +connectivity: ConnectivityStatus
+    +heading: number
+  }
+
+  class SpeedGaugeComponent <<component>> {
+    +currentSpeed: number (input)
+    +maxSpeed: number (input)
+    --
+    +getNeedleAngle(): number
+  }
+
+  class FuelGaugeComponent <<component>> {
+    +fuelLevelPercent: number (input)
+    +isLow: boolean (input)
+    --
+    +getGaugeColor(): string
+  }
+
+  class EngineTemperatureGaugeComponent <<component>> {
+    +temperatureC: number (input)
+    +isOverheating: boolean (input)
+    --
+    +getGaugeColor(): string
+  }
+
+  class BatteryIndicatorComponent <<component>> {
+    +levelPercent: number (input)
+    +isCharging: boolean (input)
+    --
+    +getIcon(): string
+  }
+
+  class ConnectivityBadgeComponent <<component>> {
+    +status: ConnectivityStatus (input)
+    --
+    +getStatusLabel(): string
+    +getStatusIcon(): string
+  }
+
+  class TelemetryChartComponent <<component>> {
+    +seriesData: ChartSeriesPoint[] (input)
+    +metricLabel: string (input)
+    --
+    +renderChart(): void
+    +updateChart(newData: ChartSeriesPoint[]): void
+  }
+
+  class ChartSeriesPoint <<value object>> {
+    +timestamp: string
+    +value: number
+  }
+
+  class RouteHistoryMapComponent <<component>> {
+    +segment: RouteSegment (input)
+    --
+    +drawPolyline(): void
+    +highlightDeviations(deviations: RouteDeviation[]): void
+  }
+
+  class RouteSummaryCardComponent <<component>> {
+    +segment: RouteSegment (input)
+    --
+    +formatDuration(): string
+  }
+
+  class DrivingScoreCardComponent <<component>> {
+    +report: DrivingReport (input)
+    --
+    +getScoreColor(): string
+  }
+
+  LiveMapComponent o-- VehicleMarkerComponent : composes
+  LiveMapComponent --> VehicleMarkerData : uses
+  VehicleMarkerComponent --> GeoPoint : input
+  VehicleMarkerComponent --> ConnectivityStatus : input
+  VehicleMarkerData --> GeoPoint : uses
+  VehicleMarkerData --> ConnectivityStatus : uses
+  TelemetryChartComponent --> ChartSeriesPoint : input
+  RouteHistoryMapComponent --> RouteSegment : input
+  RouteHistoryMapComponent ..> RouteDeviation : highlights
+  RouteSummaryCardComponent --> RouteSegment : input
+  DrivingScoreCardComponent --> DrivingReport : input
+}
+
+' ===== Navigation =====
+TelemetryRoutes ..> LiveTrackingView : "navigates to"
+TelemetryRoutes ..> TelemetryDashboardView : "navigates to"
+TelemetryRoutes ..> RouteHistoryView : "navigates to"
+TelemetryRoutes ..> DrivingReportView : "navigates to"
+
+' ===== Composition =====
+LiveTrackingView o-- LiveMapComponent : contains
+LiveTrackingView o-- ConnectivityBadgeComponent : contains
+LiveTrackingView o-- SpeedGaugeComponent : contains
+
+TelemetryDashboardView o-- SpeedGaugeComponent : contains
+TelemetryDashboardView o-- FuelGaugeComponent : contains
+TelemetryDashboardView o-- EngineTemperatureGaugeComponent : contains
+TelemetryDashboardView o-- BatteryIndicatorComponent : contains
+TelemetryDashboardView o-- ConnectivityBadgeComponent : contains
+TelemetryDashboardView o-- TelemetryChartComponent : contains
+
+RouteHistoryView o-- RouteHistoryMapComponent : contains
+RouteHistoryView o-- RouteSummaryCardComponent : contains
+
+DrivingReportView o-- DrivingScoreCardComponent : contains
+DrivingReportView o-- TelemetryChartComponent : contains
+
+' ===== Store usage =====
+LiveTrackingView ..> useTelemetryStore : uses
+TelemetryDashboardView ..> useTelemetryStore : uses
+RouteHistoryView ..> useTelemetryStore : uses
+DrivingReportView ..> useTelemetryStore : uses
+
+' ===== Domain usage from views =====
+LiveTrackingView --> VehicleGeneralStatus : uses
+TelemetryDashboardView --> VehicleGeneralStatus : uses
+TelemetryDashboardView --> TelemetryPoint : uses
+RouteHistoryView --> RouteSegment : uses
+RouteHistoryView --> RouteDeviation : uses
+DrivingReportView --> DrivingReport : uses
+
+@enduml

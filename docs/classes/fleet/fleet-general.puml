@@ -1,0 +1,636 @@
+@startuml
+' GOD's Tracker - Fleet Bounded Context - Class Diagram
+' Covers: fleet/vehicle management, IoT device assignment, fleet alert rules,
+' vehicle loan workflow (request -> approve/reject -> assign -> return request -> confirm),
+' and operational/driving reports.
+
+package "fleet/domain/model" {
+
+  class Fleet <<entity>> {
+    +id: string
+    +ownerId: string
+    +name: string
+    +organizationType: OrganizationType
+    +createdAt: string
+    --
+    +isGovernmentOrCompany(): boolean
+  }
+
+  class Vehicle <<entity>> {
+    +id: string
+    +fleetId: string
+    +plate: string
+    +model: string
+    +brand: string
+    +year: number
+    +status: VehicleStatusValue
+    +currentAssignment: VehicleLoan|null
+    +deviceAssignment: DeviceAssignment|null
+    --
+    +isActive(): boolean
+    +isAvailableForLoan(): boolean
+    +isAssignedToPersonnel(): boolean
+    +hasDeviceAssigned(): boolean
+  }
+
+  enum VehicleStatusValue {
+    ACTIVE
+    INACTIVE
+    ON_LOAN
+    MAINTENANCE
+  }
+
+  class DeviceAssignment <<entity>> {
+    +id: string
+    +vehicleId: string
+    +deviceSerial: string
+    +assignedAt: string
+    +unassignedAt: string|null
+    --
+    +isActive(): boolean
+  }
+
+  class AlertRule <<entity>> {
+    +id: string
+    +fleetId: string
+    +vehicleId: string|null
+    +type: AlertRuleType
+    +threshold: number|null
+    +geofenceArea: GeoArea|null
+    +enabled: boolean
+    --
+    +appliesToVehicle(vehicleId: string): boolean
+    +isViolatedBy(value: number): boolean
+  }
+
+  enum AlertRuleType {
+    GEOFENCE
+    SPEED_LIMIT
+    GPS_JAMMING
+    PROLONGED_STOP
+  }
+
+  class GeoArea <<value object>> {
+    +centerLat: number
+    +centerLng: number
+    +radiusMeters: number
+    --
+    +contains(lat: number, lng: number): boolean
+  }
+
+  class VehicleLoan <<entity>> {
+    +id: string
+    +vehicleId: string
+    +fleetId: string
+    +requestedByPersonnelId: string
+    +approvedByApproverId: string|null
+    +status: LoanStatus
+    +requestedAt: string
+    +decidedAt: string|null
+    +assignedAt: string|null
+    +returnRequestedAt: string|null
+    +returnConfirmedAt: string|null
+    +rejectionReason: string|null
+    +expectedReturnDate: string
+    --
+    +isPending(): boolean
+    +isApproved(): boolean
+    +isActive(): boolean
+    +isOverdue(): boolean
+    +canBeApprovedBy(approverId: string): boolean
+    +canBeReturnedBy(personnelId: string): boolean
+  }
+
+  enum LoanStatus {
+    REQUESTED
+    APPROVED
+    REJECTED
+    ASSIGNED
+    RETURN_REQUESTED
+    RETURNED
+  }
+
+  class DrivingReport <<entity>> {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +averageSpeedKmh: number
+    +drivingScore: number
+    +harshBrakingEvents: number
+    +harshAccelerationEvents: number
+    --
+    +isHighRisk(thresholdScore: number): boolean
+  }
+
+  enum OrganizationType {
+    INDIVIDUAL
+    COMPANY
+    GOVERNMENT
+  }
+
+  Fleet "1" o-- "*" Vehicle : vehicles
+  Fleet "1" *-- "1" OrganizationType : organizationType
+  Vehicle "1" *-- "0..1" DeviceAssignment : deviceAssignment
+  Vehicle "1" *-- "1" VehicleStatusValue : status
+  Vehicle "1" --> "0..1" VehicleLoan : currentAssignment
+  Vehicle "1" --> "*" VehicleLoan : loanHistory
+  VehicleLoan "1" *-- "1" LoanStatus : status
+  AlertRule "1" *-- "1" AlertRuleType : type
+  AlertRule "1" *-- "0..1" GeoArea : geofenceArea
+  Fleet "1" o-- "*" AlertRule : alertRules
+  Fleet "1" o-- "*" VehicleLoan : loans
+}
+
+package "fleet/infrastructure" {
+
+  ' ===== Resource / Response contracts =====
+
+  interface FleetResource {
+    +id: string
+    +ownerId: string
+    +name: string
+    +organizationType: string
+    +createdAt: string
+  }
+
+  interface FleetResponse {
+    +status: string
+    +fleets: FleetResource[]
+  }
+
+  interface VehicleResource {
+    +id: string
+    +fleetId: string
+    +plate: string
+    +model: string
+    +brand: string
+    +year: number
+    +status: string
+    +deviceAssignment: DeviceAssignmentResource|null
+    +currentLoanId: string|null
+  }
+
+  interface VehicleResponse {
+    +status: string
+    +vehicles: VehicleResource[]
+  }
+
+  interface DeviceAssignmentResource {
+    +id: string
+    +vehicleId: string
+    +deviceSerial: string
+    +assignedAt: string
+    +unassignedAt: string|null
+  }
+
+  interface DeviceAssignmentResponse {
+    +status: string
+    +assignment: DeviceAssignmentResource
+  }
+
+  interface AlertRuleResource {
+    +id: string
+    +fleetId: string
+    +vehicleId: string|null
+    +type: string
+    +threshold: number|null
+    +geofenceArea: GeoAreaResource|null
+    +enabled: boolean
+  }
+
+  interface GeoAreaResource {
+    +centerLat: number
+    +centerLng: number
+    +radiusMeters: number
+  }
+
+  interface AlertRuleResponse {
+    +status: string
+    +rules: AlertRuleResource[]
+  }
+
+  interface VehicleLoanResource {
+    +id: string
+    +vehicleId: string
+    +fleetId: string
+    +requestedByPersonnelId: string
+    +approvedByApproverId: string|null
+    +status: string
+    +requestedAt: string
+    +decidedAt: string|null
+    +assignedAt: string|null
+    +returnRequestedAt: string|null
+    +returnConfirmedAt: string|null
+    +rejectionReason: string|null
+    +expectedReturnDate: string
+  }
+
+  interface VehicleLoanResponse {
+    +status: string
+    +loans: VehicleLoanResource[]
+  }
+
+  interface DrivingReportResource {
+    +id: string
+    +vehicleId: string
+    +periodStart: string
+    +periodEnd: string
+    +totalDistanceKm: number
+    +totalDurationMinutes: number
+    +averageSpeedKmh: number
+    +drivingScore: number
+    +harshBrakingEvents: number
+    +harshAccelerationEvents: number
+  }
+
+  interface DrivingReportResponse {
+    +status: string
+    +reports: DrivingReportResource[]
+  }
+
+  ' ===== Assemblers (one per resource) =====
+
+  class FleetAssembler <<assembler>> {
+    +toEntityFromResource(resource: FleetResource): Fleet|null
+    +toEntitiesFromResponse(response: FleetResponse): Fleet[]
+  }
+
+  class VehicleAssembler <<assembler>> {
+    +toEntityFromResource(resource: VehicleResource): Vehicle|null
+    +toEntitiesFromResponse(response: VehicleResponse): Vehicle[]
+  }
+
+  class DeviceAssignmentAssembler <<assembler>> {
+    +toEntityFromResource(resource: DeviceAssignmentResource): DeviceAssignment|null
+    +toEntityFromResponse(response: DeviceAssignmentResponse): DeviceAssignment|null
+  }
+
+  class AlertRuleAssembler <<assembler>> {
+    +toEntityFromResource(resource: AlertRuleResource): AlertRule|null
+    +toEntitiesFromResponse(response: AlertRuleResponse): AlertRule[]
+  }
+
+  class VehicleLoanAssembler <<assembler>> {
+    +toEntityFromResource(resource: VehicleLoanResource): VehicleLoan|null
+    +toEntitiesFromResponse(response: VehicleLoanResponse): VehicleLoan[]
+  }
+
+  class DrivingReportAssembler <<assembler>> {
+    +toEntityFromResource(resource: DrivingReportResource): DrivingReport|null
+    +toEntitiesFromResponse(response: DrivingReportResponse): DrivingReport[]
+  }
+
+  ' ===== API (single, multi-endpoint) =====
+
+  class FleetApi <<api>> {
+    -fleets: BaseEndpoint
+    -vehicles: BaseEndpoint
+    -deviceAssignments: BaseEndpoint
+    -alertRules: BaseEndpoint
+    -vehicleLoans: BaseEndpoint
+    -drivingReports: BaseEndpoint
+    --
+    +getFleets(ownerId: string): Promise<FleetResponse>
+    +createFleet(resource: FleetResource): Promise<FleetResponse>
+    +getVehicles(fleetId: string): Promise<VehicleResponse>
+    +getVehicleByPlate(plate: string): Promise<VehicleResponse>
+    +createVehicle(resource: VehicleResource): Promise<VehicleResponse>
+    +updateVehicle(id: string, patch: object): Promise<VehicleResponse>
+    +deactivateVehicle(id: string): Promise<VehicleResponse>
+    +assignDevice(vehicleId: string, deviceSerial: string): Promise<DeviceAssignmentResponse>
+    +unassignDevice(assignmentId: string): Promise<DeviceAssignmentResponse>
+    +getAlertRules(fleetId: string): Promise<AlertRuleResponse>
+    +createAlertRule(resource: AlertRuleResource): Promise<AlertRuleResponse>
+    +updateAlertRule(id: string, patch: object): Promise<AlertRuleResponse>
+    +getVehicleLoans(fleetId: string, statusFilter: string|null): Promise<VehicleLoanResponse>
+    +requestVehicleLoan(resource: VehicleLoanResource): Promise<VehicleLoanResponse>
+    +approveVehicleLoan(loanId: string, approverId: string): Promise<VehicleLoanResponse>
+    +rejectVehicleLoan(loanId: string, approverId: string, reason: string): Promise<VehicleLoanResponse>
+    +assignVehicleToPersonnel(loanId: string): Promise<VehicleLoanResponse>
+    +requestVehicleReturn(loanId: string): Promise<VehicleLoanResponse>
+    +confirmVehicleReturn(loanId: string, supervisorId: string): Promise<VehicleLoanResponse>
+    +getDrivingReports(vehicleId: string, startDate: string, endDate: string): Promise<DrivingReportResponse>
+  }
+
+  FleetAssembler ..> FleetResource : transforms
+  FleetAssembler ..> FleetResponse : transforms
+  FleetAssembler --> Fleet : creates
+  FleetAssembler ..> FleetApi : uses
+
+  VehicleAssembler ..> VehicleResource : transforms
+  VehicleAssembler ..> VehicleResponse : transforms
+  VehicleAssembler --> Vehicle : creates
+  VehicleAssembler --> DeviceAssignmentAssembler : delegates deviceAssignment to
+  VehicleAssembler ..> FleetApi : uses
+
+  DeviceAssignmentAssembler ..> DeviceAssignmentResource : transforms
+  DeviceAssignmentAssembler ..> DeviceAssignmentResponse : transforms
+  DeviceAssignmentAssembler --> DeviceAssignment : creates
+  DeviceAssignmentAssembler ..> FleetApi : uses
+
+  AlertRuleAssembler ..> AlertRuleResource : transforms
+  AlertRuleAssembler ..> AlertRuleResponse : transforms
+  AlertRuleAssembler ..> GeoAreaResource : transforms
+  AlertRuleAssembler --> AlertRule : creates
+  AlertRuleAssembler --> GeoArea : creates
+  AlertRuleAssembler ..> FleetApi : uses
+
+  VehicleLoanAssembler ..> VehicleLoanResource : transforms
+  VehicleLoanAssembler ..> VehicleLoanResponse : transforms
+  VehicleLoanAssembler --> VehicleLoan : creates
+  VehicleLoanAssembler ..> FleetApi : uses
+
+  DrivingReportAssembler ..> DrivingReportResource : transforms
+  DrivingReportAssembler ..> DrivingReportResponse : transforms
+  DrivingReportAssembler --> DrivingReport : creates
+  DrivingReportAssembler ..> FleetApi : uses
+}
+
+package "shared/infrastructure [stubs]" {
+  class BaseApi <<api>> {
+  }
+  class BaseEndpoint <<api>> {
+  }
+  BaseApi *-- BaseEndpoint
+}
+
+FleetApi --|> BaseApi : extends
+
+package "fleet/application" {
+
+  class useFleetStore <<store>> {
+    -- state --
+    +fleets: Fleet[]
+    +vehicles: Vehicle[]
+    +alertRules: AlertRule[]
+    +vehicleLoans: VehicleLoan[]
+    +drivingReports: DrivingReport[]
+    +selectedFleetId: string|null
+    +selectedVehicleId: string|null
+    +searchQuery: string
+    +loanStatusFilter: LoanStatus|null
+    +loading: boolean
+    +errors: Error[]
+    -- computed --
+    +activeVehicles: Vehicle[]
+    +availableVehicles: Vehicle[]
+    +vehiclesOnLoan: Vehicle[]
+    +pendingLoanRequests: VehicleLoan[]
+    +overdueLoans: VehicleLoan[]
+    +filteredVehicles: Vehicle[]
+    +searchHasNoMatch: boolean
+    -- actions --
+    +fetchFleets(ownerId: string): void
+    +createFleet(name: string, organizationType: string): void
+    +fetchVehicles(fleetId: string): void
+    +registerVehicle(fleetId: string, plate: string, model: string, brand: string, year: number): void
+    +updateVehicle(vehicleId: string, patch: object): void
+    +deactivateVehicle(vehicleId: string): void
+    +assignDevice(vehicleId: string, deviceSerial: string): void
+    +unassignDevice(assignmentId: string): void
+    +fetchAlertRules(fleetId: string): void
+    +configureAlertRule(rule: object): void
+    +updateAlertRule(ruleId: string, patch: object): void
+    +searchVehicle(query: string): void
+    +fetchVehicleLoans(fleetId: string, statusFilter: string|null): void
+    +requestVehicleLoan(vehicleId: string, personnelId: string, expectedReturnDate: string): void
+    +approveVehicleLoan(loanId: string, approverId: string): void
+    +rejectVehicleLoan(loanId: string, approverId: string, reason: string): void
+    +assignVehicleToPersonnel(loanId: string): void
+    +requestVehicleReturn(loanId: string): void
+    +confirmVehicleReturn(loanId: string, supervisorId: string): void
+    +fetchDrivingReports(vehicleId: string, startDate: string, endDate: string): void
+    +clearErrors(): void
+  }
+
+  useFleetStore ..> FleetApi : uses
+  useFleetStore ..> FleetAssembler : uses
+  useFleetStore ..> VehicleAssembler : uses
+  useFleetStore ..> DeviceAssignmentAssembler : uses
+  useFleetStore ..> AlertRuleAssembler : uses
+  useFleetStore ..> VehicleLoanAssembler : uses
+  useFleetStore ..> DrivingReportAssembler : uses
+}
+
+package "fleet/presentation/routes" {
+  class FleetRoutes <<router>> {
+    +routes: Routes
+  }
+}
+
+package "fleet/presentation/views" {
+
+  class FleetOverviewView <<view>> {
+    -store: useFleetStore
+    +fleetId: string
+    --
+    +ngOnInit(): void
+    +onVehicleSelected(vehicleId: string): void
+    +onSearchInput(query: string): void
+  }
+
+  class VehicleManagementView <<view>> {
+    -store: useFleetStore
+    +fleetId: string
+    --
+    +ngOnInit(): void
+    +onRegisterVehicle(formData: object): void
+    +onEditVehicle(vehicleId: string, patch: object): void
+    +onDeactivateVehicle(vehicleId: string): void
+    +onAssignDevice(vehicleId: string, deviceSerial: string): void
+    +onUnassignDevice(assignmentId: string): void
+  }
+
+  class AlertRuleConfigView <<view>> {
+    -store: useFleetStore
+    +fleetId: string
+    --
+    +ngOnInit(): void
+    +onCreateRule(formData: object): void
+    +onToggleRule(ruleId: string, enabled: boolean): void
+    +onUpdateRule(ruleId: string, patch: object): void
+  }
+
+  class VehicleLoanRequestView <<view>> {
+    -store: useFleetStore
+    +personnelId: string
+    --
+    +ngOnInit(): void
+    +onSubmitLoanRequest(vehicleId: string, expectedReturnDate: string): void
+    +onSubmitReturnRequest(loanId: string): void
+  }
+
+  class LoanApprovalQueueView <<view>> {
+    -store: useFleetStore
+    +fleetId: string
+    +approverId: string
+    --
+    +ngOnInit(): void
+    +onApprove(loanId: string): void
+    +onReject(loanId: string, reason: string): void
+    +onConfirmReturn(loanId: string): void
+  }
+
+  class DrivingReportView <<view>> {
+    -store: useFleetStore
+    +vehicleId: string
+    +selectedDateRange: { start: string, end: string }
+    --
+    +ngOnInit(): void
+    +onDateRangeChange(start: string, end: string): void
+    +onExportClicked(format: string): void
+  }
+}
+
+package "fleet/presentation/components" {
+
+  class VehicleListComponent <<component>> {
+    +vehicles: Vehicle[] (input)
+    +vehicleSelected: string (output)
+    --
+    +emitVehicleSelectedEvent(vehicleId: string): void
+  }
+
+  class VehicleCardComponent <<component>> {
+    +vehicle: Vehicle (input)
+    --
+    +getStatusBadgeColor(): string
+  }
+
+  class VehicleFormComponent <<component>> {
+    +initialValue: Vehicle|null (input)
+    +submitted: object (output)
+    --
+    +validate(): boolean
+    +emitSubmitEvent(formData: object): void
+  }
+
+  class DeviceAssignmentFormComponent <<component>> {
+    +vehicleId: string (input)
+    +currentAssignment: DeviceAssignment|null (input)
+    +assigned: string (output)
+    --
+    +emitAssignEvent(deviceSerial: string): void
+  }
+
+  class AlertRuleFormComponent <<component>> {
+    +initialValue: AlertRule|null (input)
+    +submitted: object (output)
+    --
+    +validate(): boolean
+    +emitSubmitEvent(formData: object): void
+  }
+
+  class AlertRuleListComponent <<component>> {
+    +rules: AlertRule[] (input)
+    +toggled: string (output)
+    --
+    +emitToggleEvent(ruleId: string, enabled: boolean): void
+  }
+
+  class VehicleSearchBarComponent <<component>> {
+    +query: string (input)
+    +searchTriggered: string (output)
+    --
+    +emitSearchEvent(query: string): void
+  }
+
+  class LoanRequestFormComponent <<component>> {
+    +availableVehicles: Vehicle[] (input)
+    +submitted: object (output)
+    --
+    +validate(): boolean
+    +emitSubmitEvent(vehicleId: string, expectedReturnDate: string): void
+  }
+
+  class LoanCardComponent <<component>> {
+    +loan: VehicleLoan (input)
+    +decided: object (output)
+    --
+    +getStatusBadgeColor(): string
+    +emitApproveEvent(): void
+    +emitRejectEvent(reason: string): void
+  }
+
+  class ReturnConfirmationDialogComponent <<component>> {
+    +loan: VehicleLoan (input)
+    +confirmed: string (output)
+    --
+    +emitConfirmEvent(loanId: string): void
+  }
+
+  class DrivingScoreCardComponent <<component>> {
+    +report: DrivingReport (input)
+    --
+    +getScoreColor(): string
+  }
+
+  class FleetReportChartComponent <<component>> {
+    +reports: DrivingReport[] (input)
+    +metricLabel: string (input)
+    --
+    +renderChart(): void
+  }
+
+  VehicleListComponent o-- VehicleCardComponent : composes
+  VehicleCardComponent --> Vehicle : input
+  VehicleFormComponent --> Vehicle : input
+  DeviceAssignmentFormComponent --> DeviceAssignment : input
+  AlertRuleFormComponent --> AlertRule : input
+  AlertRuleListComponent --> AlertRule : input
+  LoanRequestFormComponent --> Vehicle : input
+  LoanCardComponent --> VehicleLoan : input
+  ReturnConfirmationDialogComponent --> VehicleLoan : input
+  DrivingScoreCardComponent --> DrivingReport : input
+  FleetReportChartComponent --> DrivingReport : input
+}
+
+' ===== Navigation =====
+FleetRoutes ..> FleetOverviewView : "navigates to"
+FleetRoutes ..> VehicleManagementView : "navigates to"
+FleetRoutes ..> AlertRuleConfigView : "navigates to"
+FleetRoutes ..> VehicleLoanRequestView : "navigates to"
+FleetRoutes ..> LoanApprovalQueueView : "navigates to"
+FleetRoutes ..> DrivingReportView : "navigates to"
+
+' ===== Composition =====
+FleetOverviewView o-- VehicleListComponent : contains
+FleetOverviewView o-- VehicleSearchBarComponent : contains
+
+VehicleManagementView o-- VehicleListComponent : contains
+VehicleManagementView o-- VehicleFormComponent : contains
+VehicleManagementView o-- DeviceAssignmentFormComponent : contains
+
+AlertRuleConfigView o-- AlertRuleListComponent : contains
+AlertRuleConfigView o-- AlertRuleFormComponent : contains
+
+VehicleLoanRequestView o-- LoanRequestFormComponent : contains
+VehicleLoanRequestView o-- LoanCardComponent : contains
+
+LoanApprovalQueueView o-- LoanCardComponent : contains
+LoanApprovalQueueView o-- ReturnConfirmationDialogComponent : contains
+
+DrivingReportView o-- DrivingScoreCardComponent : contains
+DrivingReportView o-- FleetReportChartComponent : contains
+
+' ===== Store usage =====
+FleetOverviewView ..> useFleetStore : uses
+VehicleManagementView ..> useFleetStore : uses
+AlertRuleConfigView ..> useFleetStore : uses
+VehicleLoanRequestView ..> useFleetStore : uses
+LoanApprovalQueueView ..> useFleetStore : uses
+DrivingReportView ..> useFleetStore : uses
+
+' ===== Domain usage from views =====
+FleetOverviewView --> Vehicle : uses
+VehicleManagementView --> Vehicle : uses
+VehicleManagementView --> DeviceAssignment : uses
+AlertRuleConfigView --> AlertRule : uses
+VehicleLoanRequestView --> VehicleLoan : uses
+LoanApprovalQueueView --> VehicleLoan : uses
+DrivingReportView --> DrivingReport : uses
+
+@enduml

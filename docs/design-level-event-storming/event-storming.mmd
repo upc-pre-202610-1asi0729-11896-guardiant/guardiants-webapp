@@ -47,6 +47,8 @@ flowchart TB
   subgraph FLEET["Fleet Management (fleet)"]
     direction LR
     fleet_supervisor["Fleet Supervisor"]:::actor
+    fleet_personnel["Personnel (Borrower)"]:::actor
+    fleet_approver["Approver"]:::actor
 
     fleet_create_cmd["Create Fleet"]:::command
     fleet_aggregate["Fleet"]:::aggregate
@@ -78,12 +80,29 @@ flowchart TB
     fleet_search_cmd["Search Vehicle (name / plate)"]:::command
     fleet_search_no_match(["NoVehicleMatchFound"]):::event
 
-    fleet_request_report_cmd["Request Operational Report (date range)"]:::command
-    fleet_driving_report["DrivingReport"]:::aggregate
-    fleet_driving_report_generated(["DrivingReportGenerated"]):::event
+  %% ===== Vehicle Loan workflow =====
+    fleet_request_loan_cmd["Request Vehicle Loan"]:::command
+    fleet_vehicle_loan["VehicleLoan"]:::aggregate
+    fleet_loan_requested(["VehicleLoanRequested"]):::event
+
+    fleet_approve_loan_cmd["Approve Vehicle Loan"]:::command
+    fleet_loan_approved(["VehicleLoanApproved"]):::event
+    fleet_reject_loan_cmd["Reject Vehicle Loan"]:::command
+    fleet_loan_rejected(["VehicleLoanRejected"]):::event
+
+    fleet_assign_vehicle_cmd["Assign Vehicle to Personnel"]:::command
+    fleet_vehicle_assigned_to_personnel(["VehicleAssignedToPersonnel"]):::event
+
+    fleet_request_return_cmd["Request Vehicle Return"]:::command
+    fleet_return_requested(["VehicleReturnRequested"]):::event
+
+    fleet_confirm_return_cmd["Confirm Vehicle Return"]:::command
+    fleet_return_confirmed(["VehicleReturnConfirmed"]):::event
+    fleet_vehicle_released(["VehicleReleasedToFleetPool"]):::event
+
+    fleet_loans_panel["Active Loans & Approval Queue Panel"]:::readmodel
 
     fleet_panel["Fleet Overview Panel\n(US10, US11)"]:::readmodel
-    fleet_reports_panel["Operational Reports & Driving Behavior Panel\n(US14, US15)"]:::readmodel
 
     fleet_supervisor --> fleet_create_cmd --> fleet_aggregate --> fleet_created
     fleet_created -.-> fleet_register_vehicle_cmd
@@ -100,17 +119,43 @@ flowchart TB
     fleet_configure_alert_cmd --> fleet_alert_rule --> fleet_alert_rule_configured
     fleet_alert_rule_configured -.-> fleet_alert_rule_updated
 
+  %% Loan request -> approval
+    fleet_vehicle_registered -.-> fleet_request_loan_cmd
+    fleet_personnel --> fleet_request_loan_cmd --> fleet_vehicle_loan --> fleet_loan_requested
+    fleet_loan_requested -.-> fleet_approve_loan_cmd
+    fleet_loan_requested -.-> fleet_reject_loan_cmd
+    fleet_approver --> fleet_approve_loan_cmd --> fleet_loan_approved
+    fleet_approver --> fleet_reject_loan_cmd --> fleet_loan_rejected
+
+  %% Approval -> assignment
+    fleet_loan_approved -.-> fleet_assign_vehicle_cmd
+    fleet_assign_vehicle_cmd --> fleet_vehicle_assigned_to_personnel
+
+  %% Return flow
+    fleet_vehicle_assigned_to_personnel -.-> fleet_request_return_cmd
+    fleet_personnel --> fleet_request_return_cmd --> fleet_return_requested
+    fleet_return_requested -.-> fleet_confirm_return_cmd
+    fleet_supervisor --> fleet_confirm_return_cmd --> fleet_return_confirmed --> fleet_vehicle_released
+
+  %% Loans feed read model
+    fleet_loan_requested --> fleet_loans_panel
+    fleet_loan_approved --> fleet_loans_panel
+    fleet_loan_rejected --> fleet_loans_panel
+    fleet_vehicle_assigned_to_personnel --> fleet_loans_panel
+    fleet_return_requested --> fleet_loans_panel
+    fleet_return_confirmed --> fleet_loans_panel
+    fleet_vehicle_released --> fleet_loans_panel
+
     fleet_created --> fleet_panel
     fleet_vehicle_registered --> fleet_panel
     fleet_vehicle_updated --> fleet_panel
     fleet_vehicle_deactivated --> fleet_panel
     fleet_device_assigned --> fleet_panel
     fleet_device_unassigned --> fleet_panel
+    fleet_vehicle_assigned_to_personnel --> fleet_panel
+    fleet_vehicle_released --> fleet_panel
     fleet_panel --> fleet_search_cmd
     fleet_search_cmd --> fleet_search_no_match
-
-    fleet_panel -.-> fleet_request_report_cmd
-    fleet_request_report_cmd --> fleet_driving_report --> fleet_driving_report_generated --> fleet_reports_panel
   end
 
   subgraph SUBSCRIPTION["Subscriptions & Billing (subscription)"]
@@ -182,9 +227,6 @@ flowchart TB
     tel_geofence_exit(["GeofenceExitDetected"]):::event
     tel_device_reconnected(["DeviceConnectionRestored"]):::event
 
-    tel_query_history_cmd["Query Route History (by date)\n(US03)"]:::command
-    tel_route_history["Route History View"]:::readmodel
-
     tel_device --> tel_gateway --> tel_publish_cmd --> tel_ingest_cmd
     tel_ingest_cmd --> tel_telemetry_point --> tel_point_registered
     tel_ingest_cmd --> tel_invalid_payload
@@ -203,13 +245,59 @@ flowchart TB
     tel_stop_resolved --> tel_location_realtime
     tel_gps_signal_lost --> tel_location_realtime
     tel_device_reconnected --> tel_location_realtime
+  end
 
-    tel_point_registered --> tel_query_history_cmd --> tel_route_history
+  subgraph QUERY["Query & Reporting (query)"]
+    direction LR
+    query_owner["Natural Person"]:::actor
+    query_supervisor["Fleet Supervisor"]:::actor
+
+  %% ===== Route History (US03) =====
+    query_request_route_history_cmd["Request Route History (vehicle, date range)\n(US03)"]:::command
+    query_route_history_view["RouteHistoryView"]:::aggregate
+    query_route_history_built(["RouteHistoryViewBuilt"]):::event
+    query_route_history_no_data(["NoRouteDataFoundForPeriod"]):::event
+
+    query_route_history_panel["Route History Panel\n(US03)"]:::readmodel
+
+  %% ===== Driving Behavior / Operational Reports (US14, US15, TS45) =====
+    query_request_driving_report_cmd["Request Driving Report (vehicle, date range)\n(US14, TS45)"]:::command
+    query_driving_report_view["DrivingReportView"]:::aggregate
+    query_driving_report_built(["DrivingReportViewBuilt"]):::event
+
+    query_request_operational_report_cmd["Request Operational Report (fleet, date range)\n(US15)"]:::command
+    query_operational_report_view["OperationalReportView"]:::aggregate
+    query_operational_report_built(["OperationalReportViewBuilt"]):::event
+    query_report_no_data(["NoReportDataFoundForPeriod"]):::event
+
+    query_reports_panel["Operational Reports & Driving Behavior Panel\n(US14, US15)"]:::readmodel
+
+  %% ===== Generic search (cross-entity) =====
+    query_search_cmd["Search (vehicles, routes, events, reports)\n(4.2.4 Searching Systems)"]:::command
+    query_search_no_match(["NoSearchResultsFound"]):::event
+    query_search_results_panel["Search Results Panel"]:::readmodel
+
+  %% ===== Export =====
+    query_export_cmd["Export Report (PDF/CSV)"]:::command
+    query_report_exported(["ReportExported"]):::event
+
+    query_owner --> query_request_route_history_cmd --> query_route_history_view --> query_route_history_built --> query_route_history_panel
+    query_request_route_history_cmd -.-> query_route_history_no_data
+
+    query_owner --> query_request_driving_report_cmd --> query_driving_report_view --> query_driving_report_built --> query_reports_panel
+    query_supervisor --> query_request_operational_report_cmd --> query_operational_report_view --> query_operational_report_built --> query_reports_panel
+    query_request_operational_report_cmd -.-> query_report_no_data
+    query_request_driving_report_cmd -.-> query_report_no_data
+
+    query_owner --> query_search_cmd --> query_search_results_panel
+    query_supervisor --> query_search_cmd
+    query_search_cmd --> query_search_no_match
+
+    query_reports_panel -.-> query_export_cmd --> query_report_exported
   end
 
   subgraph ALERTING["Security & Alerting (alerting)"]
     direction LR
-    alert_person["Natural Person"]:::actor
 
     alert_configure_geofence_cmd["Configure Geofence"]:::command
     alert_rule_geofence["AlertRule (Geofence)"]:::aggregate
@@ -362,6 +450,15 @@ flowchart TB
   sub_subscription_activated -.-> fleet_aggregate
   fleet_device_assigned -.-> tel_telemetry_point
   fleet_alert_rule_configured -.-> alert_rule_engine
+
+%% Query reads from Telemetry and Fleet (CQRS read-side projections)
+  tel_point_registered -.->|"projects into"| query_route_history_view
+  tel_point_registered -.->|"projects into"| query_driving_report_view
+  fleet_vehicle_registered -.->|"projects into"| query_operational_report_view
+  fleet_vehicle_assigned_to_personnel -.->|"projects into"| query_operational_report_view
+  alert_critical_generated -.->|"projects into"| query_operational_report_view
+  fleet_panel -.->|"feeds"| query_search_cmd
+  fleet_vehicle -.->|"feeds"| query_search_cmd
 
   classDef event fill:#FFB17A,stroke:#CC7A30,color:#000,font-weight:bold;
   classDef command fill:#AECBFA,stroke:#5B8DEF,color:#000;

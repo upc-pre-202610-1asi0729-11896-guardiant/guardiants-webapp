@@ -1,0 +1,498 @@
+@startuml
+' GOD's Tracker - Identity & Access Management Bounded Context - Class Diagram
+' Covers: landing page registration (profile type selection), email verification,
+' JWT authentication & sessions, password change, profile update,
+' language/theme preferences, logout, and session expiration.
+
+package "iam/domain/model" {
+
+  class Account <<entity>> {
+    +id: string
+    +email: string
+    +profileType: ProfileType
+    +emailVerified: boolean
+    +createdAt: string
+    --
+    +isVerified(): boolean
+    +isOrganization(): boolean
+  }
+
+  enum ProfileType {
+    NATURAL_PERSON
+    COMPANY
+    GOVERNMENT
+  }
+
+  class User <<entity>> {
+    +id: string
+    +accountId: string
+    +name: string
+    +email: string
+    +profileType: ProfileType
+    +preferences: UserPreferences
+    +createdAt: string
+    +updatedAt: string
+    --
+    +displayName(): string
+    +isAdmin(): boolean
+  }
+
+  class UserPreferences <<value object>> {
+    +language: LanguageValue
+    +theme: ThemeValue
+    --
+    +isDarkMode(): boolean
+  }
+
+  enum LanguageValue {
+    ES
+    EN
+  }
+
+  enum ThemeValue {
+    LIGHT
+    DARK
+  }
+
+  class Session <<entity>> {
+    +id: string
+    +userId: string
+    +accessToken: string
+    +refreshToken: string
+    +issuedAt: string
+    +expiresAt: string
+    +status: SessionStatus
+    --
+    +isExpired(): boolean
+    +isActive(): boolean
+    +remainingMinutes(): number
+  }
+
+  enum SessionStatus {
+    ACTIVE
+    EXPIRED
+    CLOSED
+  }
+
+  class Credentials <<value object>> {
+    +email: string
+    +password: string
+    --
+    +isValid(): boolean
+  }
+
+  class PasswordChangeRequest <<value object>> {
+    +currentPassword: string
+    +newPassword: string
+    --
+    +isValid(): boolean
+    +meetsComplexityRequirements(): boolean
+  }
+
+  Account "1" *-- "1" ProfileType : profileType
+  User "1" *-- "1" ProfileType : profileType
+  User "1" --> "1" Account : accountId
+  User "1" *-- "1" UserPreferences : preferences
+  UserPreferences "1" *-- "1" LanguageValue : language
+  UserPreferences "1" *-- "1" ThemeValue : theme
+  Session "1" --> "1" User : userId
+  Session "1" *-- "1" SessionStatus : status
+}
+
+package "iam/infrastructure" {
+
+  ' ===== Resource / Response contracts =====
+
+  interface AccountResource {
+    +id: string
+    +email: string
+    +profileType: string
+    +emailVerified: boolean
+    +createdAt: string
+  }
+
+  interface RegisterAccountResource {
+    +email: string
+    +password: string
+    +profileType: string
+    +name: string
+  }
+
+  interface AccountResponse {
+    +status: string
+    +account: AccountResource
+  }
+
+  interface VerifyEmailResource {
+    +accountId: string
+    +verificationToken: string
+  }
+
+  interface VerifyEmailResponse {
+    +status: string
+    +account: AccountResource
+  }
+
+  interface UserResource {
+    +id: string
+    +accountId: string
+    +name: string
+    +email: string
+    +profileType: string
+    +preferences: UserPreferencesResource
+    +createdAt: string
+    +updatedAt: string
+  }
+
+  interface UserPreferencesResource {
+    +language: string
+    +theme: string
+  }
+
+  interface UserResponse {
+    +status: string
+    +user: UserResource
+  }
+
+  interface LoginResource {
+    +email: string
+    +password: string
+  }
+
+  interface SessionResource {
+    +id: string
+    +userId: string
+    +accessToken: string
+    +refreshToken: string
+    +issuedAt: string
+    +expiresAt: string
+    +status: string
+  }
+
+  interface SessionResponse {
+    +status: string
+    +session: SessionResource|null
+    +user: UserResource|null
+  }
+
+  interface PasswordChangeResource {
+    +currentPassword: string
+    +newPassword: string
+  }
+
+  interface PasswordChangeResponse {
+    +status: string
+  }
+
+  interface ProfileUpdateResource {
+    +name: string
+    +email: string
+  }
+
+  interface PreferencesUpdateResource {
+    +language: string
+    +theme: string
+  }
+
+  ' ===== Assemblers (one per resource) =====
+
+  class AccountAssembler <<assembler>> {
+    +toEntityFromResource(resource: AccountResource): Account|null
+    +toEntityFromResponse(response: AccountResponse): Account|null
+    +toResourceFromRegistration(email: string, password: string, profileType: string, name: string): RegisterAccountResource
+  }
+
+  class UserAssembler <<assembler>> {
+    +toEntityFromResource(resource: UserResource): User|null
+    +toEntityFromResponse(response: UserResponse): User|null
+    +toPreferencesFromResource(resource: UserPreferencesResource): UserPreferences|null
+  }
+
+  class SessionAssembler <<assembler>> {
+    +toEntityFromResource(resource: SessionResource): Session|null
+    +toEntityFromResponse(response: SessionResponse): Session|null
+  }
+
+  ' ===== API (single, multi-endpoint) =====
+
+  class IamApi <<api>> {
+    -accounts: BaseEndpoint
+    -users: BaseEndpoint
+    -sessions: BaseEndpoint
+    --
+    +register(resource: RegisterAccountResource): Promise<AccountResponse>
+    +verifyEmail(resource: VerifyEmailResource): Promise<VerifyEmailResponse>
+    +login(resource: LoginResource): Promise<SessionResponse>
+    +refreshSession(refreshToken: string): Promise<SessionResponse>
+    +logout(sessionId: string): Promise<{ status: string }>
+    +getCurrentUser(userId: string): Promise<UserResponse>
+    +changePassword(userId: string, resource: PasswordChangeResource): Promise<PasswordChangeResponse>
+    +updateProfile(userId: string, resource: ProfileUpdateResource): Promise<UserResponse>
+    +updatePreferences(userId: string, resource: PreferencesUpdateResource): Promise<UserResponse>
+  }
+
+  AccountAssembler ..> AccountResource : transforms
+  AccountAssembler ..> AccountResponse : transforms
+  AccountAssembler ..> VerifyEmailResource : transforms
+  AccountAssembler ..> RegisterAccountResource : transforms
+  AccountAssembler --> Account : creates
+  AccountAssembler ..> IamApi : uses
+
+  UserAssembler ..> UserResource : transforms
+  UserAssembler ..> UserResponse : transforms
+  UserAssembler ..> UserPreferencesResource : transforms
+  UserAssembler --> User : creates
+  UserAssembler --> UserPreferences : creates
+  UserAssembler ..> IamApi : uses
+
+  SessionAssembler ..> SessionResource : transforms
+  SessionAssembler ..> SessionResponse : transforms
+  SessionAssembler --> Session : creates
+  SessionAssembler --> UserAssembler : delegates user to
+  SessionAssembler ..> IamApi : uses
+}
+
+package "shared/infrastructure [stubs]" {
+  class BaseApi <<api>> {
+  }
+  class BaseEndpoint <<api>> {
+  }
+  BaseApi *-- BaseEndpoint
+}
+
+IamApi --|> BaseApi : extends
+
+package "shared/infrastructure" {
+
+  class AuthInterceptor <<interceptor>> {
+    -getSession(): Session|null
+    --
+    +intercept(request: object, next: object): Observable<object>
+  }
+
+  AuthInterceptor --> Session : reads
+}
+
+package "iam/application" {
+
+  class useIamStore <<store>> {
+    -- state --
+    +currentUser: User|null
+    +session: Session|null
+    +registrationProfileType: ProfileType|null
+    +loading: boolean
+    +errors: Error[]
+    -- computed --
+    +isAuthenticated: boolean
+    +isSessionExpiringSoon: boolean
+    +currentLanguage: LanguageValue
+    +currentTheme: ThemeValue
+    -- actions --
+    +register(email: string, password: string, profileType: string, name: string): void
+    +verifyEmail(accountId: string, token: string): void
+    +login(email: string, password: string): void
+    +refreshSession(): void
+    +logout(): void
+    +loadCurrentUser(): void
+    +changePassword(currentPassword: string, newPassword: string): void
+    +updateProfile(name: string, email: string): void
+    +updatePreferences(language: string, theme: string): void
+    +setSessionExpired(): void
+    +clearErrors(): void
+  }
+
+  useIamStore ..> IamApi : uses
+  useIamStore ..> AccountAssembler : uses
+  useIamStore ..> UserAssembler : uses
+  useIamStore ..> SessionAssembler : uses
+  useIamStore --> Credentials : uses
+  useIamStore --> PasswordChangeRequest : uses
+}
+
+package "iam/presentation/routes" {
+  class IamRoutes <<router>> {
+    +routes: Routes
+  }
+}
+
+package "iam/presentation/views" {
+
+  class LandingPageView <<view>> {
+    -store: useIamStore
+    --
+    +ngOnInit(): void
+    +onLoginClicked(): void
+    +onGetStartedClicked(): void
+  }
+
+  class RegisterView <<view>> {
+    -store: useIamStore
+    --
+    +ngOnInit(): void
+    +onProfileTypeSelected(profileType: string): void
+    +onSubmit(formData: object): void
+  }
+
+  class LoginView <<view>> {
+    -store: useIamStore
+    --
+    +ngOnInit(): void
+    +onSubmit(email: string, password: string): void
+  }
+
+  class VerifyEmailView <<view>> {
+    -store: useIamStore
+    +accountId: string
+    +token: string
+    --
+    +ngOnInit(): void
+  }
+
+  class AccountSettingsView <<view>> {
+    -store: useIamStore
+    --
+    +ngOnInit(): void
+    +onProfileSubmit(formData: object): void
+    +onPasswordSubmit(formData: object): void
+    +onLogoutClicked(): void
+  }
+
+  class PreferencesSettingsView <<view>> {
+    -store: useIamStore
+    --
+    +ngOnInit(): void
+    +onLanguageChanged(language: string): void
+    +onThemeChanged(theme: string): void
+  }
+}
+
+package "iam/presentation/components" {
+
+  class ProfileTypeSelectorComponent <<component>> {
+    +selected: string|null (input)
+    +typeSelected: string (output)
+    --
+    +emitTypeSelectedEvent(profileType: string): void
+  }
+
+  class RegisterFormComponent <<component>> {
+    +profileType: string (input)
+    +submitted: object (output)
+    --
+    +validate(): boolean
+    +emitSubmittedEvent(formData: object): void
+  }
+
+  class LoginFormComponent <<component>> {
+    +submitted: object (output)
+    --
+    +validate(): boolean
+    +emitSubmittedEvent(email: string, password: string): void
+  }
+
+  class CredentialInputComponent <<component>> {
+    +label: string (input)
+    +type: string (input)
+    +value: string (input)
+    +valueChanged: string (output)
+    --
+    +togglePasswordVisibility(): void
+    +emitValueChangedEvent(value: string): void
+  }
+
+  class ProfileFormComponent <<component>> {
+    +user: User (input)
+    +submitted: object (output)
+    --
+    +validate(): boolean
+    +emitSubmittedEvent(formData: object): void
+  }
+
+  class PasswordChangeFormComponent <<component>> {
+    +submitted: object (output)
+    --
+    +validate(): boolean
+    +emitSubmittedEvent(currentPassword: string, newPassword: string): void
+  }
+
+  class LanguageSelectorComponent <<component>> {
+    +current: string (input)
+    +changed: string (output)
+    --
+    +emitChangedEvent(language: string): void
+  }
+
+  class ThemeToggleComponent <<component>> {
+    +current: string (input)
+    +changed: string (output)
+    --
+    +emitChangedEvent(theme: string): void
+  }
+
+  class SessionExpiredDialogComponent <<component>> {
+    +visible: boolean (input)
+    +confirmed: object (output)
+    --
+    +emitConfirmedEvent(): void
+  }
+
+  class UserAvatarMenuComponent <<component>> {
+    +user: User (input)
+    +logoutClicked: object (output)
+    --
+    +emitLogoutClickedEvent(): void
+  }
+
+  RegisterFormComponent o-- CredentialInputComponent : composes
+  RegisterFormComponent o-- ProfileTypeSelectorComponent : composes
+  LoginFormComponent o-- CredentialInputComponent : composes
+  PasswordChangeFormComponent o-- CredentialInputComponent : composes
+  ProfileFormComponent --> User : input
+  UserAvatarMenuComponent --> User : input
+}
+
+' ===== Navigation =====
+IamRoutes ..> LandingPageView : "navigates to"
+IamRoutes ..> RegisterView : "navigates to"
+IamRoutes ..> LoginView : "navigates to"
+IamRoutes ..> VerifyEmailView : "navigates to"
+IamRoutes ..> AccountSettingsView : "navigates to"
+IamRoutes ..> PreferencesSettingsView : "navigates to"
+
+LandingPageView ..> RegisterView : "Get Started ->"
+LandingPageView ..> LoginView : "Login ->"
+RegisterView ..> VerifyEmailView : "after AccountRegistered ->"
+VerifyEmailView ..> LoginView : "after EmailVerified ->"
+
+' ===== Composition =====
+RegisterView o-- RegisterFormComponent : contains
+
+LoginView o-- LoginFormComponent : contains
+
+AccountSettingsView o-- ProfileFormComponent : contains
+AccountSettingsView o-- PasswordChangeFormComponent : contains
+AccountSettingsView o-- UserAvatarMenuComponent : contains
+
+PreferencesSettingsView o-- LanguageSelectorComponent : contains
+PreferencesSettingsView o-- ThemeToggleComponent : contains
+
+' ===== Store usage =====
+LandingPageView ..> useIamStore : uses
+RegisterView ..> useIamStore : uses
+LoginView ..> useIamStore : uses
+VerifyEmailView ..> useIamStore : uses
+AccountSettingsView ..> useIamStore : uses
+PreferencesSettingsView ..> useIamStore : uses
+SessionExpiredDialogComponent ..> useIamStore : uses
+
+' ===== Domain usage from views =====
+RegisterView --> Account : uses
+RegisterView --> ProfileType : uses
+LoginView --> Credentials : uses
+LoginView --> Session : uses
+VerifyEmailView --> Account : uses
+AccountSettingsView --> User : uses
+AccountSettingsView --> PasswordChangeRequest : uses
+PreferencesSettingsView --> UserPreferences : uses
+
+@enduml

@@ -1,0 +1,463 @@
+@startuml
+' GOD's Tracker - Security Commands (Remote Control) Bounded Context - Class Diagram
+' Covers: engine block (US07/US19), device restart (US34), theft report (US08),
+' location sharing (US09), device health check (US33), and command dispatch/ack
+' lifecycle to the IoT device via the Telemetry Gateway (MQTT).
+
+package "commands/domain/model" {
+
+  class Command <<entity>> {
+    +id: string
+    +vehicleId: string
+    +issuedByUserId: string
+    +type: CommandType
+    +triggeredByAlertId: string|null
+    +status: CommandStatus
+    +issuedAt: string
+    +dispatchedAt: string|null
+    +acknowledgedAt: string|null
+    +completedAt: string|null
+    +result: CommandResult|null
+    --
+    +isPending(): boolean
+    +isAcknowledged(): boolean
+    +isCompleted(): boolean
+    +wasTriggeredAutomatically(): boolean
+    +logSummary(): string
+  }
+
+  enum CommandType {
+    ENGINE_BLOCK
+    ENGINE_UNBLOCK
+    DEVICE_RESTART
+  }
+
+  enum CommandStatus {
+    ISSUED
+    DISPATCHED
+    ACKNOWLEDGED
+    COMPLETED
+    FAILED
+  }
+
+  enum CommandResult {
+    SUCCEEDED
+    FAILED
+    TIMED_OUT
+  }
+
+  class DeviceHealth <<entity>> {
+    +vehicleId: string
+    +deviceSerial: string
+    +model: string
+    +imei: string
+    +status: DeviceConnectionStatus
+    +lastConnectionAt: string
+    +batteryLevelPercent: number|null
+    --
+    +isOperational(): boolean
+    +isStale(thresholdMinutes: number): boolean
+  }
+
+  enum DeviceConnectionStatus {
+    ACTIVE
+    INACTIVE
+  }
+
+  class TheftReport <<entity>> {
+    +id: string
+    +vehicleId: string
+    +reportedByUserId: string
+    +reportedAt: string
+    +status: IncidentStatus
+    +relatedCommandIds: string[]
+    +relatedAlertId: string|null
+    --
+    +isActive(): boolean
+    +activatesEmergencyProtocol(): boolean
+  }
+
+  enum IncidentStatus {
+    ACTIVE
+    RESOLVED
+  }
+
+  class LocationShareLink <<entity>> {
+    +id: string
+    +vehicleId: string
+    +createdByUserId: string
+    +token: string
+    +createdAt: string
+    +expiresAt: string|null
+    --
+    +isExpired(): boolean
+    +toShareableUrl(): string
+  }
+
+  Command "1" *-- "1" CommandType : type
+  Command "1" *-- "1" CommandStatus : status
+  Command "1" --> "0..1" CommandResult : result
+  DeviceHealth "1" *-- "1" DeviceConnectionStatus : status
+  TheftReport "1" *-- "1" IncidentStatus : status
+  TheftReport "1" --> "*" Command : relatedCommandIds
+}
+
+package "commands/infrastructure" {
+
+  ' ===== Resource / Response contracts =====
+
+  interface CommandResource {
+    +id: string
+    +vehicleId: string
+    +issuedByUserId: string
+    +type: string
+    +triggeredByAlertId: string|null
+    +status: string
+    +issuedAt: string
+    +dispatchedAt: string|null
+    +acknowledgedAt: string|null
+    +completedAt: string|null
+    +result: string|null
+  }
+
+  interface CommandResponse {
+    +status: string
+    +command: CommandResource
+  }
+
+  interface CommandListResponse {
+    +status: string
+    +commands: CommandResource[]
+  }
+
+  interface DeviceHealthResource {
+    +vehicleId: string
+    +deviceSerial: string
+    +model: string
+    +imei: string
+    +status: string
+    +lastConnectionAt: string
+    +batteryLevelPercent: number|null
+  }
+
+  interface DeviceHealthResponse {
+    +status: string
+    +device: DeviceHealthResource
+  }
+
+  interface TheftReportResource {
+    +id: string
+    +vehicleId: string
+    +reportedByUserId: string
+    +reportedAt: string
+    +status: string
+    +relatedCommandIds: string[]
+    +relatedAlertId: string|null
+  }
+
+  interface TheftReportResponse {
+    +status: string
+    +report: TheftReportResource
+  }
+
+  interface TheftReportListResponse {
+    +status: string
+    +reports: TheftReportResource[]
+  }
+
+  interface LocationShareLinkResource {
+    +id: string
+    +vehicleId: string
+    +createdByUserId: string
+    +token: string
+    +createdAt: string
+    +expiresAt: string|null
+  }
+
+  interface LocationShareLinkResponse {
+    +status: string
+    +link: LocationShareLinkResource
+  }
+
+  ' ===== Assemblers (one per resource) =====
+
+  class CommandAssembler <<assembler>> {
+    +toEntityFromResource(resource: CommandResource): Command|null
+    +toEntityFromResponse(response: CommandResponse): Command|null
+    +toEntitiesFromResponse(response: CommandListResponse): Command[]
+  }
+
+  class DeviceHealthAssembler <<assembler>> {
+    +toEntityFromResource(resource: DeviceHealthResource): DeviceHealth|null
+    +toEntityFromResponse(response: DeviceHealthResponse): DeviceHealth|null
+  }
+
+  class TheftReportAssembler <<assembler>> {
+    +toEntityFromResource(resource: TheftReportResource): TheftReport|null
+    +toEntityFromResponse(response: TheftReportResponse): TheftReport|null
+    +toEntitiesFromResponse(response: TheftReportListResponse): TheftReport[]
+  }
+
+  class LocationShareLinkAssembler <<assembler>> {
+    +toEntityFromResource(resource: LocationShareLinkResource): LocationShareLink|null
+    +toEntityFromResponse(response: LocationShareLinkResponse): LocationShareLink|null
+  }
+
+  ' ===== API (single, multi-endpoint) =====
+
+  class CommandsApi <<api>> {
+    -commands: BaseEndpoint
+    -deviceHealth: BaseEndpoint
+    -theftReports: BaseEndpoint
+    -locationShareLinks: BaseEndpoint
+    --
+    +issueEngineBlock(vehicleId: string, issuedByUserId: string, triggeredByAlertId: string|null): Promise<CommandResponse>
+    +issueEngineUnblock(vehicleId: string, issuedByUserId: string): Promise<CommandResponse>
+    +issueDeviceRestart(vehicleId: string, issuedByUserId: string): Promise<CommandResponse>
+    +getCommandById(id: string): Promise<CommandResponse>
+    +getCommandsForVehicle(vehicleId: string): Promise<CommandListResponse>
+    +subscribeToCommandStatus(commandId: string): Observable<CommandResource>
+    +getDeviceHealth(vehicleId: string): Promise<DeviceHealthResponse>
+    +reportTheft(vehicleId: string, reportedByUserId: string): Promise<TheftReportResponse>
+    +getActiveTheftReports(): Promise<TheftReportListResponse>
+    +resolveTheftReport(id: string): Promise<TheftReportResponse>
+    +generateLocationShareLink(vehicleId: string, createdByUserId: string, expiresAt: string|null): Promise<LocationShareLinkResponse>
+  }
+
+  CommandAssembler ..> CommandResource : transforms
+  CommandAssembler ..> CommandResponse : transforms
+  CommandAssembler ..> CommandListResponse : transforms
+  CommandAssembler --> Command : creates
+  CommandAssembler ..> CommandsApi : uses
+
+  DeviceHealthAssembler ..> DeviceHealthResource : transforms
+  DeviceHealthAssembler ..> DeviceHealthResponse : transforms
+  DeviceHealthAssembler --> DeviceHealth : creates
+  DeviceHealthAssembler ..> CommandsApi : uses
+
+  TheftReportAssembler ..> TheftReportResource : transforms
+  TheftReportAssembler ..> TheftReportResponse : transforms
+  TheftReportAssembler ..> TheftReportListResponse : transforms
+  TheftReportAssembler --> TheftReport : creates
+  TheftReportAssembler --> CommandAssembler : delegates relatedCommandIds to
+  TheftReportAssembler ..> CommandsApi : uses
+
+  LocationShareLinkAssembler ..> LocationShareLinkResource : transforms
+  LocationShareLinkAssembler ..> LocationShareLinkResponse : transforms
+  LocationShareLinkAssembler --> LocationShareLink : creates
+  LocationShareLinkAssembler ..> CommandsApi : uses
+}
+
+package "shared/infrastructure [stubs]" {
+  class BaseApi <<api>> {
+  }
+  class BaseEndpoint <<api>> {
+  }
+  BaseApi *-- BaseEndpoint
+}
+
+CommandsApi --|> BaseApi : extends
+
+package "commands/application" {
+
+  class useCommandsStore <<store>> {
+    -- state --
+    +commandsByVehicle: Record<string, Command[]>
+    +deviceHealthByVehicle: Record<string, DeviceHealth>
+    +activeTheftReports: TheftReport[]
+    +activeShareLinks: LocationShareLink[]
+    +pendingCommandId: string|null
+    +loading: boolean
+    +errors: Error[]
+    -- computed --
+    +latestCommandForVehicle(vehicleId: string): Command|null
+    +isEngineBlocked(vehicleId: string): boolean
+    +isCommandPending(vehicleId: string): boolean
+    +deviceHealth(vehicleId: string): DeviceHealth|null
+    -- actions --
+    +blockEngine(vehicleId: string, issuedByUserId: string, triggeredByAlertId: string|null): Promise<string>
+    +unblockEngine(vehicleId: string, issuedByUserId: string): void
+    +restartDevice(vehicleId: string, issuedByUserId: string): void
+    +trackCommandStatus(commandId: string): void
+    +fetchCommandsForVehicle(vehicleId: string): void
+    +fetchDeviceHealth(vehicleId: string): void
+    +reportTheft(vehicleId: string, reportedByUserId: string): void
+    +fetchActiveTheftReports(): void
+    +resolveTheftReport(id: string): void
+    +shareVehicleLocation(vehicleId: string, createdByUserId: string, expiresAt: string|null): void
+    +clearErrors(): void
+  }
+
+  useCommandsStore ..> CommandsApi : uses
+  useCommandsStore ..> CommandAssembler : uses
+  useCommandsStore ..> DeviceHealthAssembler : uses
+  useCommandsStore ..> TheftReportAssembler : uses
+  useCommandsStore ..> LocationShareLinkAssembler : uses
+  useCommandsStore --> Command : "issueEngineBlock(...) -> Command [issueEngineBlockCommandIssued]"
+}
+
+package "telemetry [stubs]" {
+  class useTelemetryStore <<store>> {
+    +liveStatusByVehicle: Record<string, object>
+  }
+}
+
+package "alerting [stubs]" {
+  class useAlertingStore <<store>> {
+    +requestEngineBlockFromAlert(alertId: string, vehicleId: string): void
+    +recordAutomaticDefenseTrigger(vehicleId: string, alertId: string, actionType: string): void
+  }
+}
+
+useAlertingStore ..> useCommandsStore : "delegates engine block to"
+useCommandsStore ..> useTelemetryStore : "EngineBlocked updates liveStatusByVehicle"
+useCommandsStore ..> useAlertingStore : "DeviceRestarted -> DeviceConnectionRestored"
+
+package "commands/presentation/routes" {
+  class CommandsRoutes <<router>> {
+    +routes: Routes
+  }
+}
+
+package "commands/presentation/views" {
+
+  class RemoteControlView <<view>> {
+    -store: useCommandsStore
+    +vehicleId: string
+    --
+    +ngOnInit(): void
+    +onBlockEngineClicked(): void
+    +onUnblockEngineClicked(): void
+    +onRestartDeviceClicked(): void
+  }
+
+  class QuickActionsView <<view>> {
+    -store: useCommandsStore
+    +vehicleId: string
+    --
+    +ngOnInit(): void
+    +onReportTheftClicked(): void
+    +onShareLocationClicked(): void
+    +onBlockEngineClicked(): void
+  }
+
+  class DeviceConfigView <<view>> {
+    -store: useCommandsStore
+    +vehicleId: string
+    --
+    +ngOnInit(): void
+    +onRefreshHealthClicked(): void
+    +onRestartDeviceClicked(): void
+  }
+
+  class ActiveIncidentsView <<view>> {
+    -store: useCommandsStore
+    --
+    +ngOnInit(): void
+    +onResolveIncident(reportId: string): void
+  }
+}
+
+package "commands/presentation/components" {
+
+  class EngineBlockButtonComponent <<component>> {
+    +vehicleId: string (input)
+    +currentlyBlocked: boolean (input)
+    +commandIssued: string (output)
+    --
+    +emitCommandIssuedEvent(commandId: string): void
+  }
+
+  class CommandStatusBadgeComponent <<component>> {
+    +command: Command (input)
+    --
+    +getStatusColor(): string
+    +getStatusLabel(): string
+  }
+
+  class CommandExecutionLogComponent <<component>> {
+    +commands: Command[] (input)
+    --
+    +getResultIcon(result: string): string
+  }
+
+  class DeviceHealthCardComponent <<component>> {
+    +device: DeviceHealth (input)
+    +refreshRequested: string (output)
+    --
+    +emitRefreshRequestedEvent(vehicleId: string): void
+  }
+
+  class RestartDeviceButtonComponent <<component>> {
+    +vehicleId: string (input)
+    +restartRequested: string (output)
+    --
+    +emitRestartRequestedEvent(vehicleId: string): void
+  }
+
+  class ReportTheftButtonComponent <<component>> {
+    +vehicleId: string (input)
+    +confirmed: string (output)
+    --
+    +emitConfirmedEvent(vehicleId: string): void
+  }
+
+  class ShareLocationButtonComponent <<component>> {
+    +vehicleId: string (input)
+    +linkGenerated: string (output)
+    --
+    +emitLinkGeneratedEvent(link: LocationShareLink): void
+  }
+
+  class IncidentCardComponent <<component>> {
+    +report: TheftReport (input)
+    +resolved: string (output)
+    --
+    +emitResolvedEvent(reportId: string): void
+  }
+
+  EngineBlockButtonComponent --> Command : input
+  CommandStatusBadgeComponent --> Command : input
+  CommandExecutionLogComponent --> Command : input
+  DeviceHealthCardComponent --> DeviceHealth : input
+  IncidentCardComponent --> TheftReport : input
+  ShareLocationButtonComponent --> LocationShareLink : output
+}
+
+' ===== Navigation =====
+CommandsRoutes ..> RemoteControlView : "navigates to"
+CommandsRoutes ..> QuickActionsView : "navigates to"
+CommandsRoutes ..> DeviceConfigView : "navigates to"
+CommandsRoutes ..> ActiveIncidentsView : "navigates to"
+
+' ===== Composition =====
+RemoteControlView o-- EngineBlockButtonComponent : contains
+RemoteControlView o-- CommandStatusBadgeComponent : contains
+RemoteControlView o-- CommandExecutionLogComponent : contains
+
+QuickActionsView o-- EngineBlockButtonComponent : contains
+QuickActionsView o-- ReportTheftButtonComponent : contains
+QuickActionsView o-- ShareLocationButtonComponent : contains
+
+DeviceConfigView o-- DeviceHealthCardComponent : contains
+DeviceConfigView o-- RestartDeviceButtonComponent : contains
+DeviceConfigView o-- CommandStatusBadgeComponent : contains
+
+ActiveIncidentsView o-- IncidentCardComponent : contains
+
+' ===== Store usage =====
+RemoteControlView ..> useCommandsStore : uses
+QuickActionsView ..> useCommandsStore : uses
+DeviceConfigView ..> useCommandsStore : uses
+ActiveIncidentsView ..> useCommandsStore : uses
+
+' ===== Domain usage from views =====
+RemoteControlView --> Command : uses
+QuickActionsView --> Command : uses
+QuickActionsView --> TheftReport : uses
+QuickActionsView --> LocationShareLink : uses
+DeviceConfigView --> DeviceHealth : uses
+DeviceConfigView --> Command : uses
+ActiveIncidentsView --> TheftReport : uses
+
+@enduml
