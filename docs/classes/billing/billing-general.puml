@@ -1,0 +1,456 @@
+@startuml
+' GOD's Tracker - Subscriptions & Billing Bounded Context - Class Diagram
+' Covers: plan selection, Stripe payment processing, subscription activation,
+' payment failure / suspension, renewal / expiration, and plan upgrades (US36).
+
+package "billing/domain/model" {
+
+  class Plan <<entity>> {
+    +id: string
+    +key: string
+    +name: string
+    +priceUsd: number
+    +billingIntervalMonths: number
+    +maxVehicles: number
+    +features: string[]
+    --
+    +isFree(): boolean
+    +supportsVehicleCount(count: number): boolean
+  }
+
+  class Subscription <<entity>> {
+    +id: string
+    +ownerId: string
+    +planId: string
+    +status: SubscriptionStatus
+    +currentPeriodStart: string
+    +currentPeriodEnd: string
+    +stripeSubscriptionId: string|null
+    +stripeCustomerId: string|null
+    +cancelAtPeriodEnd: boolean
+    +createdAt: string
+    +updatedAt: string
+    --
+    +isActive(): boolean
+    +isExpired(): boolean
+    +isSuspended(): boolean
+    +daysUntilExpiration(): number
+    +canBeUpgradedTo(plan: Plan): boolean
+  }
+
+  enum SubscriptionStatus {
+    PENDING
+    ACTIVE
+    SUSPENDED
+    EXPIRED
+    CANCELED
+  }
+
+  class Payment <<entity>> {
+    +id: string
+    +subscriptionId: string
+    +stripePaymentIntentId: string
+    +amountUsd: number
+    +currency: string
+    +status: PaymentStatus
+    +failureReason: string|null
+    +processedAt: string
+    --
+    +isSuccessful(): boolean
+    +isFailed(): boolean
+  }
+
+  enum PaymentStatus {
+    PENDING
+    SUCCEEDED
+    FAILED
+  }
+
+  class PaymentFailureNotification <<entity>> {
+    +id: string
+    +subscriptionId: string
+    +paymentId: string
+    +ownerId: string
+    +sentAt: string
+    +acknowledged: boolean
+    --
+    +daysUntilSuspension(gracePeriodDays: number): number
+  }
+
+  class DeviceConnectionStatus <<value object>> {
+    +value: ConnectionValue
+    +lastSeenAt: string
+    --
+    +isConnected(): boolean
+  }
+
+  enum ConnectionValue {
+    CONNECTED
+    DISCONNECTED
+  }
+
+  Subscription "1" *-- "1" SubscriptionStatus : status
+  Subscription "1" --> "1" Plan : plan
+  Payment "1" *-- "1" PaymentStatus : status
+  Payment "1" --> "1" Subscription : subscriptionId
+  PaymentFailureNotification "1" --> "1" Payment : paymentId
+  PaymentFailureNotification "1" --> "1" Subscription : subscriptionId
+  DeviceConnectionStatus "1" *-- "1" ConnectionValue : value
+}
+
+package "billing/infrastructure" {
+
+  ' ===== Resource / Response contracts =====
+
+  interface PlanResource {
+    +id: string
+    +key: string
+    +name: string
+    +priceUsd: number
+    +billingIntervalMonths: number
+    +maxVehicles: number
+    +features: string[]
+  }
+
+  interface PlanListResponse {
+    +status: string
+    +plans: PlanResource[]
+  }
+
+  interface SubscriptionResource {
+    +id: string
+    +ownerId: string
+    +planId: string
+    +status: string
+    +currentPeriodStart: string
+    +currentPeriodEnd: string
+    +stripeSubscriptionId: string|null
+    +stripeCustomerId: string|null
+    +cancelAtPeriodEnd: boolean
+    +createdAt: string
+    +updatedAt: string
+  }
+
+  interface SubscriptionResponse {
+    +status: string
+    +subscription: SubscriptionResource|null
+  }
+
+  interface PaymentResource {
+    +id: string
+    +subscriptionId: string
+    +stripePaymentIntentId: string
+    +amountUsd: number
+    +currency: string
+    +status: string
+    +failureReason: string|null
+    +processedAt: string
+  }
+
+  interface PaymentResponse {
+    +status: string
+    +payment: PaymentResource
+  }
+
+  interface PaymentListResponse {
+    +status: string
+    +payments: PaymentResource[]
+  }
+
+  interface PaymentFailureNotificationResource {
+    +id: string
+    +subscriptionId: string
+    +paymentId: string
+    +ownerId: string
+    +sentAt: string
+    +acknowledged: boolean
+  }
+
+  interface PaymentFailureNotificationResponse {
+    +status: string
+    +notification: PaymentFailureNotificationResource
+  }
+
+  interface DeviceConnectionStatusResource {
+    +value: string
+    +lastSeenAt: string
+  }
+
+  ' ===== Assemblers (one per resource) =====
+
+  class PlanAssembler <<assembler>> {
+    +toEntityFromResource(resource: PlanResource): Plan|null
+    +toEntitiesFromResponse(response: PlanListResponse): Plan[]
+  }
+
+  class SubscriptionAssembler <<assembler>> {
+    +toEntityFromResource(resource: SubscriptionResource): Subscription|null
+    +toEntityFromResponse(response: SubscriptionResponse): Subscription|null
+  }
+
+  class PaymentAssembler <<assembler>> {
+    +toEntityFromResource(resource: PaymentResource): Payment|null
+    +toEntityFromResponse(response: PaymentResponse): Payment|null
+    +toEntitiesFromResponse(response: PaymentListResponse): Payment[]
+  }
+
+  class PaymentFailureNotificationAssembler <<assembler>> {
+    +toEntityFromResource(resource: PaymentFailureNotificationResource): PaymentFailureNotification|null
+    +toEntityFromResponse(response: PaymentFailureNotificationResponse): PaymentFailureNotification|null
+  }
+
+  class DeviceConnectionStatusAssembler <<assembler>> {
+    +toValueObjectFromResource(resource: DeviceConnectionStatusResource): DeviceConnectionStatus|null
+  }
+
+  ' ===== API (single, multi-endpoint) =====
+
+  class BillingApi <<api>> {
+    -plans: BaseEndpoint
+    -subscriptions: BaseEndpoint
+    -payments: BaseEndpoint
+    -paymentFailureNotifications: BaseEndpoint
+    -deviceStatus: BaseEndpoint
+    --
+    +getPlans(): Promise<PlanListResponse>
+    +getCurrentSubscription(ownerId: string): Promise<SubscriptionResponse>
+    +selectPlan(ownerId: string, planId: string): Promise<SubscriptionResponse>
+    +createStripeCheckoutSession(subscriptionId: string): Promise<{ checkoutUrl: string }>
+    +confirmPayment(subscriptionId: string, stripePaymentIntentId: string): Promise<PaymentResponse>
+    +getPaymentHistory(subscriptionId: string): Promise<PaymentListResponse>
+    +getPaymentFailureNotifications(ownerId: string): Promise<PaymentFailureNotificationResponse>
+    +acknowledgePaymentFailure(notificationId: string): Promise<PaymentFailureNotificationResponse>
+    +renewSubscription(subscriptionId: string): Promise<SubscriptionResponse>
+    +updatePlan(subscriptionId: string, newPlanId: string): Promise<SubscriptionResponse>
+    +cancelSubscription(subscriptionId: string): Promise<SubscriptionResponse>
+    +getDeviceConnectionStatus(ownerId: string): Promise<DeviceConnectionStatusResource>
+  }
+
+  PlanAssembler ..> PlanResource : transforms
+  PlanAssembler ..> PlanListResponse : transforms
+  PlanAssembler --> Plan : creates
+  PlanAssembler ..> BillingApi : uses
+
+  SubscriptionAssembler ..> SubscriptionResource : transforms
+  SubscriptionAssembler ..> SubscriptionResponse : transforms
+  SubscriptionAssembler --> Subscription : creates
+  SubscriptionAssembler --> PlanAssembler : delegates plan to
+  SubscriptionAssembler ..> BillingApi : uses
+
+  PaymentAssembler ..> PaymentResource : transforms
+  PaymentAssembler ..> PaymentResponse : transforms
+  PaymentAssembler ..> PaymentListResponse : transforms
+  PaymentAssembler --> Payment : creates
+  PaymentAssembler ..> BillingApi : uses
+
+  PaymentFailureNotificationAssembler ..> PaymentFailureNotificationResource : transforms
+  PaymentFailureNotificationAssembler ..> PaymentFailureNotificationResponse : transforms
+  PaymentFailureNotificationAssembler --> PaymentFailureNotification : creates
+  PaymentFailureNotificationAssembler --> PaymentAssembler : delegates payment to
+  PaymentFailureNotificationAssembler ..> BillingApi : uses
+
+  DeviceConnectionStatusAssembler ..> DeviceConnectionStatusResource : transforms
+  DeviceConnectionStatusAssembler --> DeviceConnectionStatus : creates
+  DeviceConnectionStatusAssembler ..> BillingApi : uses
+}
+
+package "shared/infrastructure [stubs]" {
+  class BaseApi <<api>> {
+  }
+  class BaseEndpoint <<api>> {
+  }
+  BaseApi *-- BaseEndpoint
+}
+
+BillingApi --|> BaseApi : extends
+
+package "stripe/infrastructure [stubs]" {
+  class StripeCheckoutClient <<api>> {
+    +redirectToCheckout(checkoutUrl: string): void
+  }
+}
+
+package "commands [stubs]" {
+  class useCommandsStore <<store>> {
+    +fetchDeviceHealth(vehicleId: string): void
+  }
+}
+
+package "application" {
+
+  class useBillingStore <<store>> {
+    -- state --
+    +plans: Plan[]
+    +subscription: Subscription|null
+    +paymentHistory: Payment[]
+    +pendingFailureNotifications: PaymentFailureNotification[]
+    +deviceConnectionStatus: DeviceConnectionStatus|null
+    +selectedPlanId: string|null
+    +checkoutInProgress: boolean
+    +loading: boolean
+    +errors: Error[]
+    -- computed --
+    +activePlan: Plan|null
+    +isSubscriptionActive: boolean
+    +isSubscriptionSuspended: boolean
+    +daysUntilExpiration: number|null
+    +hasUnacknowledgedFailures: boolean
+    +upgradeablePlans: Plan[]
+    -- actions --
+    +fetchPlans(): void
+    +fetchCurrentSubscription(ownerId: string): void
+    +selectPlan(ownerId: string, planId: string): void
+    +startCheckout(subscriptionId: string): void
+    +confirmPayment(subscriptionId: string, stripePaymentIntentId: string): void
+    +fetchPaymentHistory(subscriptionId: string): void
+    +fetchPaymentFailureNotifications(ownerId: string): void
+    +acknowledgePaymentFailure(notificationId: string): void
+    +renewSubscription(subscriptionId: string): void
+    +updatePlan(subscriptionId: string, newPlanId: string): void
+    +cancelSubscription(subscriptionId: string): void
+    +fetchDeviceConnectionStatus(ownerId: string): void
+    +clearErrors(): void
+  }
+
+  useBillingStore ..> BillingApi : uses
+  useBillingStore ..> PlanAssembler : uses
+  useBillingStore ..> SubscriptionAssembler : uses
+  useBillingStore ..> PaymentAssembler : uses
+  useBillingStore ..> PaymentFailureNotificationAssembler : uses
+  useBillingStore ..> DeviceConnectionStatusAssembler : uses
+  useBillingStore ..> StripeCheckoutClient : uses
+  useBillingStore ..> useCommandsStore : "may cross-reference device health for US36"
+}
+
+package "billing/presentation/routes" {
+  class BillingRoutes <<router>> {
+    +routes: Routes
+  }
+}
+
+package "billing/presentation/views" {
+
+  class PlansView <<view>> {
+    -store: useBillingStore
+    +ownerId: string
+    --
+    +ngOnInit(): void
+    +onPlanSelected(planId: string): void
+    +onCheckoutClicked(): void
+  }
+
+  class SubscriptionPanelView <<view>> {
+    -store: useBillingStore
+    +ownerId: string
+    --
+    +ngOnInit(): void
+    +onUpgradeClicked(planId: string): void
+    +onCancelClicked(): void
+  }
+
+  class PaymentHistoryView <<view>> {
+    -store: useBillingStore
+    +subscriptionId: string
+    --
+    +ngOnInit(): void
+  }
+
+  class PaymentFailureNoticeView <<view>> {
+    -store: useBillingStore
+    +ownerId: string
+    --
+    +ngOnInit(): void
+    +onAcknowledgeClicked(notificationId: string): void
+    +onRetryPaymentClicked(): void
+  }
+}
+
+package "billing/presentation/components" {
+
+  class PlanCardComponent <<component>> {
+    +plan: Plan (input)
+    +isCurrent: boolean (input)
+    +selected: string (output)
+    --
+    +emitSelectedEvent(planId: string): void
+  }
+
+  class PlanComparisonTableComponent <<component>> {
+    +plans: Plan[] (input)
+    +currentPlanId: string|null (input)
+  }
+
+  class SubscriptionStatusBadgeComponent <<component>> {
+    +subscription: Subscription (input)
+    --
+    +getStatusColor(): string
+    +getStatusLabel(): string
+  }
+
+  class DeviceStatusIndicatorComponent <<component>> {
+    +status: DeviceConnectionStatus (input)
+    --
+    +getStatusIcon(): string
+  }
+
+  class PaymentHistoryTableComponent <<component>> {
+    +payments: Payment[] (input)
+  }
+
+  class PaymentFailureBannerComponent <<component>> {
+    +notification: PaymentFailureNotification (input)
+    +acknowledged: string (output)
+    +retryRequested: object (output)
+    --
+    +emitAcknowledgedEvent(notificationId: string): void
+    +emitRetryRequestedEvent(): void
+  }
+
+  class CheckoutButtonComponent <<component>> {
+    +subscriptionId: string (input)
+    +checkoutStarted: string (output)
+    --
+    +emitCheckoutStartedEvent(subscriptionId: string): void
+  }
+
+  PlanComparisonTableComponent o-- PlanCardComponent : composes
+  PlanCardComponent --> Plan : input
+  SubscriptionStatusBadgeComponent --> Subscription : input
+  DeviceStatusIndicatorComponent --> DeviceConnectionStatus : input
+  PaymentHistoryTableComponent --> Payment : input
+  PaymentFailureBannerComponent --> PaymentFailureNotification : input
+}
+
+' ===== Navigation =====
+BillingRoutes ..> PlansView : "navigates to"
+BillingRoutes ..> SubscriptionPanelView : "navigates to"
+BillingRoutes ..> PaymentHistoryView : "navigates to"
+BillingRoutes ..> PaymentFailureNoticeView : "navigates to"
+
+' ===== Composition =====
+PlansView o-- PlanComparisonTableComponent : contains
+PlansView o-- CheckoutButtonComponent : contains
+
+SubscriptionPanelView o-- SubscriptionStatusBadgeComponent : contains
+SubscriptionPanelView o-- DeviceStatusIndicatorComponent : contains
+SubscriptionPanelView o-- PlanCardComponent : contains
+
+PaymentHistoryView o-- PaymentHistoryTableComponent : contains
+
+PaymentFailureNoticeView o-- PaymentFailureBannerComponent : contains
+PaymentFailureNoticeView o-- CheckoutButtonComponent : contains
+
+' ===== Store usage =====
+PlansView ..> useBillingStore : uses
+SubscriptionPanelView ..> useBillingStore : uses
+PaymentHistoryView ..> useBillingStore : uses
+PaymentFailureNoticeView ..> useBillingStore : uses
+
+' ===== Domain usage from views =====
+PlansView --> Plan : uses
+SubscriptionPanelView --> Subscription : uses
+SubscriptionPanelView --> DeviceConnectionStatus : uses
+PaymentHistoryView --> Payment : uses
+PaymentFailureNoticeView --> PaymentFailureNotification : uses
+
+@enduml

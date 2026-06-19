@@ -1,0 +1,329 @@
+@startuml
+' GOD's Tracker - Frontend Shared Module - Class Diagram
+' Real (non-stub) definitions of the base infrastructure, domain primitives,
+' HTTP interceptors, and shared UI components used across all bounded contexts:
+' iam, fleet, billing, telemetry, alerting, commands, query.
+
+package "shared/domain/model" {
+
+  abstract class BaseEntity <<entity>> {
+    +id: string
+    --
+    +equals(other: BaseEntity): boolean
+  }
+
+  class PaginatedResult<T> <<value object>> {
+    +items: T[]
+    +page: number
+    +pageSize: number
+    +totalItems: number
+    +totalPages: number
+    --
+    +hasNextPage(): boolean
+    +hasPreviousPage(): boolean
+    +isEmpty(): boolean
+  }
+
+  class DateRange <<value object>> {
+    +startDate: string
+    +endDate: string
+    --
+    +isValid(): boolean
+    +spansDays(): number
+    +contains(date: string): boolean
+  }
+
+  class GeoPoint <<value object>> {
+    +lat: number
+    +lng: number
+    --
+    +distanceTo(other: GeoPoint): number
+  }
+
+  class ApiError <<value object>> {
+    +code: string
+    +message: string
+    +statusCode: number
+    +fieldErrors: Record<string, string>|null
+    --
+    +isValidationError(): boolean
+    +isAuthError(): boolean
+    +isNotFoundError(): boolean
+    +isServerError(): boolean
+  }
+
+  enum RequestStatus {
+    IDLE
+    LOADING
+    SUCCESS
+    ERROR
+  }
+
+  PaginatedResult --> BaseEntity : items
+}
+
+package "shared/infrastructure" {
+
+  ' ===== Resource / Response contracts =====
+
+  interface BaseResource {
+    +id: string
+  }
+
+  interface PaginatedResponse<T> {
+    +status: string
+    +items: T[]
+    +page: number
+    +pageSize: number
+    +totalItems: number
+    +totalPages: number
+  }
+
+  interface ErrorResponse {
+    +status: string
+    +error: ApiErrorResource
+  }
+
+  interface ApiErrorResource {
+    +code: string
+    +message: string
+    +statusCode: number
+    +fieldErrors: Record<string, string>|null
+  }
+
+  ' ===== Base API / Endpoint =====
+
+  abstract class BaseApi <<api>> {
+    -httpClient: HttpClient
+    -baseUrl: string
+    --
+    +buildEndpoint(path: string): BaseEndpoint
+  }
+
+  class BaseEndpoint <<api>> {
+    -httpClient: HttpClient
+    -url: string
+    --
+    +getAll(): Promise<object>
+    +getById(id: string): Promise<object>
+    +getPaginated(page: number, pageSize: number, filters: object|null): Promise<object>
+    +create(resource: object): Promise<object>
+    +update(id: string, patch: object): Promise<object>
+    +delete(id: string): Promise<object>
+    +subscribe(): Observable<object>
+  }
+
+  BaseApi *-- BaseEndpoint : creates
+
+  ' ===== Assembler contract =====
+
+  interface BaseAssembler<TResource, TEntity> {
+    +toEntityFromResource(resource: TResource): TEntity|null
+    +toEntitiesFromResponse(response: object): TEntity[]
+  }
+
+  ' ===== Interceptors =====
+
+  class AuthInterceptor <<interceptor>> {
+    -getSession(): object|null
+    --
+    +intercept(request: object, next: object): Observable<object>
+  }
+
+  class ErrorInterceptor <<interceptor>> {
+    -notificationService: NotificationService
+    --
+    +intercept(request: object, next: object): Observable<object>
+    +mapToApiError(httpError: object): ApiError
+  }
+
+  class LoadingInterceptor <<interceptor>> {
+    -loadingStore: useLoadingStore
+    --
+    +intercept(request: object, next: object): Observable<object>
+  }
+
+  ErrorInterceptor ..> ApiError : creates
+  ErrorInterceptor ..> ErrorResponse : transforms
+
+  ' ===== Generic store contract =====
+
+  abstract class BaseStore<TEntity> <<store>> {
+    +items: TEntity[]
+    +loading: boolean
+    +errors: ApiError[]
+    --
+    +clearErrors(): void
+    +setLoading(value: boolean): void
+  }
+}
+
+package "iam [stubs]" {
+  class Session <<entity>> {
+    +accessToken: string
+    +refreshToken: string
+    +expiresAt: string
+  }
+}
+
+AuthInterceptor --> Session : reads
+
+package "shared/application" {
+
+  class useLoadingStore <<store>> {
+    -- state --
+    +activeRequestCount: number
+    -- computed --
+    +isLoading: boolean
+    -- actions --
+    +increment(): void
+    +decrement(): void
+  }
+
+  class useNotificationStore <<store>> {
+    -- state --
+    +toasts: ToastMessage[]
+    -- actions --
+    +showSuccess(message: string): void
+    +showError(message: string): void
+    +showInfo(message: string): void
+    +dismiss(toastId: string): void
+  }
+
+  class ToastMessage <<value object>> {
+    +id: string
+    +type: ToastType
+    +message: string
+    +createdAt: string
+  }
+
+  enum ToastType {
+    SUCCESS
+    ERROR
+    INFO
+  }
+
+  useNotificationStore --> ToastMessage : manages
+  ToastMessage "1" *-- "1" ToastType : type
+}
+
+package "shared/presentation/layout" {
+
+  class AppShellComponent <<component>> {
+    --
+    +ngOnInit(): void
+  }
+
+  class TopNavBarComponent <<component>> {
+    +searchTriggered: string (output)
+    --
+    +emitSearchTriggeredEvent(query: string): void
+  }
+
+  class SideNavComponent <<component>> {
+    +collapsed: boolean (input)
+    +navItemSelected: string (output)
+    --
+    +emitNavItemSelectedEvent(route: string): void
+  }
+
+  class FooterComponent <<component>> {
+  }
+
+  AppShellComponent o-- TopNavBarComponent : contains
+  AppShellComponent o-- SideNavComponent : contains
+  AppShellComponent o-- FooterComponent : contains
+}
+
+package "shared/presentation/components" {
+
+  class LoadingSpinnerComponent <<component>> {
+    +visible: boolean (input)
+  }
+
+  class ToastContainerComponent <<component>> {
+    +toasts: ToastMessage[] (input)
+    +dismissed: string (output)
+    --
+    +emitDismissedEvent(toastId: string): void
+  }
+
+  class ConfirmDialogComponent <<component>> {
+    +title: string (input)
+    +message: string (input)
+    +confirmed: boolean (output)
+    --
+    +emitConfirmedEvent(confirmed: boolean): void
+  }
+
+  class EmptyStateComponent <<component>> {
+    +message: string (input)
+    +icon: string (input)
+  }
+
+  class ErrorBannerComponent <<component>> {
+    +error: ApiError (input)
+    +dismissed: object (output)
+    --
+    +emitDismissedEvent(): void
+  }
+
+  class PaginationControlsComponent <<component>> {
+    +page: number (input)
+    +totalPages: number (input)
+    +pageChanged: number (output)
+    --
+    +emitPageChangedEvent(page: number): void
+  }
+
+  class DateRangePickerComponent <<component>> {
+    +value: DateRange (input)
+    +changed: object (output)
+    --
+    +emitChangedEvent(start: string, end: string): void
+  }
+
+  class MapViewComponent <<component>> {
+    +center: GeoPoint (input)
+    +zoom: number (input)
+    --
+    +panTo(point: GeoPoint): void
+    +zoomToFit(points: GeoPoint[]): void
+  }
+
+  class ConnectivityStatusBadgeComponent <<component>> {
+    +online: boolean (input)
+    --
+    +getStatusIcon(): string
+  }
+
+  ToastContainerComponent o-- ToastMessage : displays
+  ErrorBannerComponent --> ApiError : input
+  DateRangePickerComponent --> DateRange : input
+  MapViewComponent --> GeoPoint : input
+  ToastContainerComponent ..> useNotificationStore : uses
+  LoadingSpinnerComponent ..> useLoadingStore : uses
+}
+
+' ===== Cross-cutting usage by all bounded contexts =====
+package "iam, fleet, billing, telemetry, alerting, commands, query [stubs]" {
+  class BoundedContextApi <<api>> {
+  }
+  class BoundedContextAssembler <<assembler>> {
+  }
+  class BoundedContextEntity <<entity>> {
+  }
+  class BoundedContextStore <<store>> {
+  }
+}
+
+BoundedContextApi --|> BaseApi : extends
+BoundedContextAssembler ..|> BaseAssembler : implements
+BoundedContextEntity --|> BaseEntity : extends
+BoundedContextStore --|> BaseStore : extends
+BoundedContextEntity --> GeoPoint : "may use"
+BoundedContextEntity --> DateRange : "may use"
+BoundedContextStore --> PaginatedResult : "may use"
+
+
+@enduml
